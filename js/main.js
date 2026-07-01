@@ -1682,21 +1682,21 @@ async function startQuizWithNumber(uiStartNumber) {
   }
 }
 
-window.initialize = initialize;
-window.startQuizWithNumber = startQuizWithNumber;
-window.renderGraphic = renderGraphic;
-window.renderCurrentQuestion = renderCurrentQuestion;
-window.showExplanation = showExplanation;
-window.goNext = goNext;
-window.goPrev = goPrev;
-window.skipQuestion = skipQuestion;
-window.submitSubjective = submitSubjective;
-window.showResults = showResults;
-window.showWrongAnswersList = showWrongAnswersList;
-window.startWrongOnlyReview = startWrongOnlyReview;
-window.saveProgress = saveProgress;
-window.loadProgress = loadProgress;
-window.clearProgress = clearProgress;
-window.DOM = DOM;
-
-console.log('✅ T123-1+2+3+4 통합 완료!');
+// ===== 내보내기 (export) =====
+export { 
+    initialize, 
+    startQuizWithNumber, 
+    renderGraphic,
+    renderCurrentQuestion,
+    showExplanation,
+    goNext,
+    goPrev,
+    skipQuestion,
+    submitSubjective,
+    showResults,
+    showWrongAnswersList,
+    startWrongOnlyReview,
+    saveProgress,
+    loadProgress,
+    clearProgress
+};
