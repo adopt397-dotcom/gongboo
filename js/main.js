@@ -965,7 +965,73 @@ else if (parsedData.type === 'compare' && parsedData.graphs) {
   return compareHtml;
 }
 
-
+// SCATTER-ONLY
+else if (parsedData.type === 'scatter-only' && parsedData.points) {
+  var scatterOnlyChartId = 'chart_' + Math.random().toString(36).substr(2, 9);
+  var scatterOnlyHtml = '<div style="margin:15px 0;padding:15px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;"><canvas id="' + scatterOnlyChartId + '" style="max-height:400px;width:100%;"></canvas></div>';
+  
+  setTimeout(function() {
+    var ctx = document.getElementById(scatterOnlyChartId);
+    if (!ctx) return;
+    if (window._chartInstances && window._chartInstances[scatterOnlyChartId]) {
+      window._chartInstances[scatterOnlyChartId].destroy();
+    }
+    if (!window._chartInstances) window._chartInstances = {};
+    
+    var dataPoints = parsedData.points.map(function(p) {
+      return { x: p.x, y: p.y };
+    });
+    
+    var minX = parsedData.xAxis?.min ?? 0;
+    var maxX = parsedData.xAxis?.max ?? 10;
+    var minY = parsedData.yAxis?.min ?? -10;
+    var maxY = parsedData.yAxis?.max ?? 10;
+    
+    var cc = {
+      type: 'scatter',
+      data: {
+        datasets: [{
+          label: parsedData.title || 'Scatterplot',
+          data: dataPoints,
+          backgroundColor: '#3498db',
+          borderColor: '#2980b9',
+          pointRadius: 5,
+          pointHoverRadius: 7
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          title: { display: true, text: parsedData.title || 'Scatterplot', font: { size: 16, weight: 'bold' } },
+          legend: { display: false }
+        },
+        scales: {
+          x: {
+            min: minX,
+            max: maxX,
+            grid: { color: '#e0e0e0' },
+            title: { display: true, text: parsedData.xAxis?.label || 'x' }
+          },
+          y: {
+            min: minY,
+            max: maxY,
+            grid: { color: '#e0e0e0' },
+            title: { display: true, text: parsedData.yAxis?.label || 'y' }
+          }
+        }
+      }
+    };
+    
+    var canvas = document.getElementById(scatterOnlyChartId);
+    if (canvas && cc) {
+      canvas.parentElement.style.height = '400px';
+      window._chartInstances[scatterOnlyChartId] = new Chart(canvas, cc);
+    }
+  }, 100);
+  
+  return scatterOnlyHtml;
+}
 
     
   // UNSUPPORTED
