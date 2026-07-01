@@ -1,0 +1,39 @@
+// ============================================================
+// y: 후행 코드 (내보내기 + 전역 노출)
+// ============================================================
+
+// ===== 내보내기 (export) =====
+export { 
+    initialize, 
+    startQuizWithNumber, 
+    renderGraphic,
+    renderCurrentQuestion,
+    showExplanation,
+    goNext,
+    goPrev,
+    skipQuestion,
+    submitSubjective,
+    showResults,
+    showWrongAnswersList,
+    startWrongOnlyReview,
+    saveProgress,
+    loadProgress,
+    clearProgress
+};
+
+// ===== 전역 노출 (tilda.cc HTML에서 직접 호출 가능) =====
+window.initialize = initialize;
+window.startQuizWithNumber = startQuizWithNumber;
+window.renderGraphic = renderGraphic;
+window.renderCurrentQuestion = renderCurrentQuestion;
+window.showExplanation = showExplanation;
+window.goNext = goNext;
+window.goPrev = goPrev;
+window.skipQuestion = skipQuestion;
+window.submitSubjective = submitSubjective;
+window.showResults = showResults;
+window.showWrongAnswersList = showWrongAnswersList;
+window.startWrongOnlyReview = startWrongOnlyReview;
+window.saveProgress = saveProgress;
+window.loadProgress = loadProgress;
+window.clearProgress = clearProgress;
