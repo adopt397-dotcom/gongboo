@@ -1,26 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Graphics Engine v3.0</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f0f2f5; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .graphic-box { background: white; border-radius: 12px; padding: 20px; margin: 15px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .graphic-box h3 { margin: 0 0 10px 0; color: #2c3e50; }
-        canvas { max-height: 400px; width: 100%; }
-        .tag { display: inline-block; padding: 2px 10px; background: #3498db; color: white; border-radius: 4px; font-size: 12px; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h1>📊 Graphics Engine v3.0</h1>
-    <p>Block-based architecture with slash (/) support for SAT/AP graphics</p>
-    <div id="demo"></div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
 // ================================================================
 // GRAPHICS ENGINE v3.0 - 전체 통합 파일
 // ================================================================
