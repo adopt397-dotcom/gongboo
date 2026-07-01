@@ -61,7 +61,7 @@ var LANG = {
 
 var API_URL = "https://script.google.com/macros/s/AKfycbx-S88kC_Ii_MxbibHmmHQYK_ITc1U9jphAxJ-uV0NSBGMFUidA3ItBE0niKhUyW32oMA/exec";
 var STORAGE_KEY = 'quiz_progress_main';
-var TOTAL_CACHE_KEY = 'quiz_total_questions';
+var TOTAL_CACHE_KEY = 'quiz_total_questions';1
 var QUESTIONS_PER_SET = 120;
 var TOTAL_QUESTIONS = 0;
 var masterQuestions = [];
@@ -1700,3 +1700,19 @@ export {
     loadProgress,
     clearProgress
 };77
+// ===== main.js 맨 아래, export 전에 추가 =====
+window.initialize = initialize;
+window.startQuizWithNumber = startQuizWithNumber;
+window.renderCurrentQuestion = renderCurrentQuestion;
+window.goNext = goNext;
+window.goPrev = goPrev;
+window.skipQuestion = skipQuestion;
+window.submitSubjective = submitSubjective;
+window.showResults = showResults;
+window.showWrongAnswersList = showWrongAnswersList;
+window.startWrongOnlyReview = startWrongOnlyReview;
+window.saveProgress = saveProgress;
+window.loadProgress = loadProgress;
+window.clearProgress = clearProgress;
+window.renderGraphic = renderGraphic;
+window.showExplanation = showExplanation;
