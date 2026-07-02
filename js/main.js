@@ -2432,7 +2432,7 @@ if (parsedData.labels) {
 }*/
 
 // ============================================================
-// 11. COORDINATE-PLANE (완전판 - line + curve + functions + labels)
+// 11. COORDINATE-PLANE (완전판 - line + curve + functions + labels + segments)
 // ============================================================
 else if (parsedData.type === 'coordinate-plane') {
   var coordCanvasId = 'coord_' + Math.random().toString(36).substr(2, 9);
@@ -2441,6 +2441,8 @@ else if (parsedData.type === 'coordinate-plane') {
     '</div>';
   
   setTimeout(function() {
+    console.log("✅ coordinate-plane version 2026 - full support");
+    
     var canvas = document.getElementById(coordCanvasId);
     if (!canvas) {
       console.error("❌ Canvas not found!");
@@ -2589,7 +2591,9 @@ else if (parsedData.type === 'coordinate-plane') {
       ctx.fillText(y, origin.x - 8, pos.y);
     }
     
-    // 점 표시
+    // ============================================================
+    // 점 표시 (points)
+    // ============================================================
     if (parsedData.points) {
       parsedData.points.forEach(function(pt) {
         var screen = toScreen(pt.x, pt.y);
@@ -2610,7 +2614,9 @@ else if (parsedData.type === 'coordinate-plane') {
       });
     }
     
-    // 선분 표시
+    // ============================================================
+    // 선분 표시 (segments) - toScreen 사용
+    // ============================================================
     if (parsedData.segments) {
       parsedData.segments.forEach(function(seg) {
         var from = toScreen(seg.from[0], seg.from[1]);
@@ -2618,13 +2624,15 @@ else if (parsedData.type === 'coordinate-plane') {
         ctx.beginPath();
         ctx.moveTo(from.x, from.y);
         ctx.lineTo(to.x, to.y);
-        ctx.strokeStyle = seg.color || '#e74c3c';
+        ctx.strokeStyle = seg.color || '#2c3e50';
         ctx.lineWidth = seg.lineWidth || 2;
         ctx.stroke();
       });
     }
     
+    // ============================================================
     // 곡선 표시 (series) - line + curve 모두 지원
+    // ============================================================
     if (parsedData.series) {
       parsedData.series.forEach(function(ser) {
         if ((ser.type === 'line' || ser.type === 'curve') && ser.points) {
@@ -2642,7 +2650,9 @@ else if (parsedData.type === 'coordinate-plane') {
       });
     }
     
+    // ============================================================
     // 함수 곡선 표시 (functions 배열) - Math.js 사용
+    // ============================================================
     if (parsedData.functions && Array.isArray(parsedData.functions)) {
       parsedData.functions.forEach(function(func) {
         var equation = func.equation || '';
@@ -2697,7 +2707,7 @@ else if (parsedData.type === 'coordinate-plane') {
     }
     
     // ============================================================
-    // 레이블 표시 (labels) - 신규 추가
+    // 레이블 표시 (labels) - toScreen 사용
     // ============================================================
     if (parsedData.labels) {
       parsedData.labels.forEach(function(label) {
