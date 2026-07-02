@@ -474,7 +474,196 @@ async function load50Questions(uiStartNumber) {
     return [];
   }
 }
+function goNext() {
+  if (currentIndex < currentQuestions.length - 1) {
+    currentIndex++;
+    renderCurrentQuestion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
 
+function goPrev() {
+  if (currentIndex > 0) {
+    currentIndex--;
+    renderCurrentQuestion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function skipQuestion() {
+  if (userAnswers[currentIndex] === null || userAnswers[currentIndex] === undefined) {
+    userAnswers[currentIndex] = -1;
+    saveProgress();
+  }
+  if (currentIndex < currentQuestions.length - 1) {
+    currentIndex++;
+    renderCurrentQuestion();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function submitSubjective() {
+  var input = document.getElementById('subjectiveInput');
+  if (!input) return;
+  var userAnswer = input.value.trim();
+  if (userAnswer === "") {
+    alert('Please enter your answer.');
+    return;
+  }
+  var q = currentQuestions[currentIndex];
+  var correctAnswer = '';
+  if (q.A && q.A !== '') {
+    correctAnswer = String(q.A).trim();
+  } else if (q.answer && q.answer !== '' && q.answer !== '0') {
+    correctAnswer = String(q.answer).trim();
+  } else {
+    correctAnswer = userAnswer;
+  }
+  var isCorrect = (userAnswer === correctAnswer) || (parseFloat(userAnswer) === parseFloat(correctAnswer));
+  userAnswers[currentIndex] = userAnswer;
+  if (isCorrect) correctCount++;
+  saveProgress();
+  renderCurrentQuestion();
+}
+
+function showResults() {
+  saveProgress();
+  var answeredCount = userAnswers.filter(function(a) { return a !== null && a !== undefined && a !== -1; }).length;
+  var accuracy = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+  DOM.correctCountSpan.innerHTML = correctCount + ' / ' + answeredCount;
+  DOM.accuracyRateSpan.innerHTML = accuracy + '%';
+  var gridHtml = '<div style="display:grid;grid-template-columns:repeat(10,1fr);gap:6px;">';
+  for (var i = 0; i < currentQuestions.length; i++) {
+    var ans = userAnswers[i];
+    var isCorrect = (ans !== null && ans !== undefined && ans !== -1 && ans === parseInt(currentQuestions[i].answer));
+    var isSkipped = (ans === -1);
+    var isUnanswered = (ans === null || ans === undefined);
+    var statusClass = isCorrect ? 'correct' : isSkipped ? 'skipped' : isUnanswered ? 'unanswered' : 'incorrect';
+    gridHtml += '<div class="result-item ' + statusClass + '" data-qidx="' + i + '">' + (i + 1) + '</div>';
+  }
+  gridHtml += '</div>';
+  DOM.resultGrid.innerHTML = gridHtml;
+  DOM.resultGrid.querySelectorAll('.result-item[data-qidx]').forEach(function(el) {
+    el.addEventListener('click', function() {
+      var idx = parseInt(el.getAttribute('data-qidx'));
+      currentIndex = idx;
+      DOM.resultModal.style.display = 'none';
+      renderCurrentQuestion();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+  });
+  DOM.resultModal.style.display = 'flex';
+}
+
+function showWrongAnswersList() {
+  var wrongItems = [];
+  for (var i = 0; i < currentQuestions.length; i++) {
+    var q = currentQuestions[i];
+    var ans = userAnswers[i];
+    var isSkipped = (ans === -1);
+    var isUnanswered = (ans === null || ans === undefined);
+    var isSubjective = isSubjectiveQuestion(q);
+    var isIncorrect = false;
+    if (!isSkipped && !isUnanswered) {
+      if (isSubjective) {
+        var correctAns = q.A || q.answer || '';
+        isIncorrect = !(String(ans).trim() === String(correctAns).trim());
+      } else {
+        isIncorrect = (ans !== parseInt(q.answer));
+      }
+    }
+    if (isSkipped || isIncorrect || isUnanswered) {
+      var actualNumber = q.originalNumber || (currentStartNumber + i);
+      wrongItems.push({ idx: i, actualNumber: actualNumber, q: q, ans: ans, isSkipped: isSkipped, isUnanswered: isUnanswered, isSubjective: isSubjective });
+    }
+  }
+  if (wrongItems.length === 0) {
+    alert(LANG.allCorrect);
+    return;
+  }
+  var html = '<p style="margin-bottom:15px;padding:10px;background:#f0f0f0;border-radius:8px;text-align:center;">' +
+    LANG.reviewQuestions + ' <strong>' + wrongItems.length + '</strong><br>' +
+    LANG.wrongCount + ' ' + wrongItems.filter(function(w) { return !w.isSkipped && !w.isUnanswered; }).length +
+    ' | ' + LANG.skippedCount + ' ' + wrongItems.filter(function(w) { return w.isSkipped; }).length +
+    ' | ' + LANG.unansweredCount + ' ' + wrongItems.filter(function(w) { return w.isUnanswered; }).length +
+    '</p>';
+  wrongItems.forEach(function(item) {
+    var statusText = item.isSkipped ? LANG.statusSkipped : (item.isUnanswered ? LANG.statusUnanswered : LANG.statusWrong);
+    var statusColor = item.isSkipped ? '#f39c12' : (item.isUnanswered ? '#6c757d' : '#e74c3c');
+    var userAnswerDisplay = (item.ans === null || item.ans === undefined || item.ans === -1) ? '—' : String(item.ans);
+    var correctAnswerDisplay = (item.isSubjective) ? (item.q.A || item.q.answer || '—') : getAnswerLetter(item.q.answer);
+    if (!item.isSubjective && !item.isSkipped && !item.isUnanswered) {
+      userAnswerDisplay = getAnswerLetter(item.ans);
+      correctAnswerDisplay = getAnswerLetter(item.q.answer);
+    }
+    html += '<div class="wrong-item" style="border-left:5px solid ' + statusColor + '">' +
+      '<div style="font-weight:bold;margin-bottom:10px;">' +
+      'Question ' + (item.idx + 1) + ' (Original #' + item.actualNumber + ')' +
+      '<span class="status-badge" style="background:' + statusColor + ';">' + statusText + '</span>' +
+      (item.isSubjective ? ' Subjective' : '') +
+      '</div>' +
+      '<div style="margin-bottom:12px;"><strong>' + escapeHtml(item.q.question) + '</strong></div>' +
+      '<div style="margin-top:12px;padding:10px;background:#f8f9fa;border-radius:8px;">' +
+      '<strong>Your answer:</strong> ' + escapeHtml(String(userAnswerDisplay)) +
+      '<br><strong>Correct answer:</strong> ' + escapeHtml(String(correctAnswerDisplay)) +
+      '</div>' +
+      '<div style="margin-top:12px;padding:10px;background:#e8f4fc;border-radius:8px;">' +
+      '<strong>Explanation</strong><br>' + escapeHtml(item.q.explanation || LANG.noExplanation) +
+      '</div>' +
+      '</div>';
+  });
+  DOM.wrongListDiv.innerHTML = html;
+  DOM.wrongModal.style.display = 'flex';
+}
+
+function startWrongOnlyReview() {
+  var indices = getWrongSkippedUnansweredIndices();
+  if (indices.length === 0) {
+    alert(LANG.allCorrect);
+    return;
+  }
+  var reviewQuestions = indices.map(function(idx) {
+    return currentQuestions[idx];
+  });
+  currentQuestions = reviewQuestions.slice();
+  userAnswers = new Array(currentQuestions.length).fill(null);
+  correctCount = 0;
+  currentIndex = 0;
+  isReviewMode = true;
+  DOM.reviewBanner.style.display = 'block';
+  DOM.reviewBanner.innerHTML = '<span>Review Mode: ' + currentQuestions.length + ' questions</span>' +
+    '<button id="exitReviewBtn" class="exit-review-btn">EXIT REVIEW</button>';
+  document.getElementById('exitReviewBtn').addEventListener('click', function() {
+    clearProgress();
+    window.location.reload();
+  });
+  DOM.wrongModal.style.display = 'none';
+  DOM.resultModal.style.display = 'none';
+  renderCurrentQuestion();
+  saveProgress();
+}
+
+function getWrongSkippedUnansweredIndices() {
+  var result = [];
+  for (var i = 0; i < currentQuestions.length; i++) {
+    var q = currentQuestions[i];
+    var ans = userAnswers[i];
+    var isUnanswered = (ans === null || ans === undefined);
+    var isSkipped = (ans === -1);
+    var isSubjective = isSubjectiveQuestion(q);
+    var isIncorrect = false;
+    if (!isUnanswered && !isSkipped) {
+      if (isSubjective) {
+        var correctAns = q.A || q.answer || '';
+        isIncorrect = !(String(ans).trim() === String(correctAns).trim());
+      } else {
+        isIncorrect = (ans !== parseInt(q.answer));
+      }
+    }
+    if (isUnanswered || isSkipped || isIncorrect) result.push(i);
+  }
+  return result;
+}
 
 
 
