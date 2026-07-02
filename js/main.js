@@ -2180,10 +2180,10 @@ else if (parsedData.type === 'coordinate-plane') {
     var graphH = h - padding * 2;
     
     function toScreen(px, py) {
-      var sx = padding + ((px - xMin) / (xMax - xMin)) * graphW;
-      var sy = padding + graphH - ((py - yMin) / (yMax - yMin)) * graphH;
-      return { x: sx, y: sy };
-    }
+  var sx = padding + ((px - xMin) / (xMax - xMin)) * graphW;
+  var sy = padding + graphH - ((py - yMin) / (yMax - yMin)) * graphH;  // ← y축 반전
+  return { x: sx, y: sy };
+}
     
     // 배경
     ctx.fillStyle = '#ffffff';
