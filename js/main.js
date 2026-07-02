@@ -1,5 +1,5 @@
 // ============================================================
-// x T123-1 + T123-2 + T123-3 + T123-4 통합 (GitHub용 - 완전한 버전)
+// x: 선행 코드
 // ============================================================
 
 var LANG = {
@@ -1379,7 +1379,7 @@ function renderGraphic(jsonData) {
   var colors = ['#3498db', '#e74c3c', '#27ae60', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#2c3e50', '#7f8c8d', '#16a085', '#d35400', '#c0392b'];
   var chartId = 'chart_' + Math.random().toString(36).substr(2, 9);
   var html = '<div style="margin:15px 0;padding:15px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;"><canvas id="' + chartId + '" style="max-height:400px;width:100%;"></canvas></div>';
-  
+
   // ============================================================
   // 1. TABLE
   // ============================================================
@@ -1402,9 +1402,9 @@ function renderGraphic(jsonData) {
     h += '</div>';
     return h;
   }
-  
+
   // ============================================================
-  // 2. BAR (기존 유지)
+  // 2. BAR
   // ============================================================
   else if (parsedData.type === 'bar') {
     var labels = [];
@@ -1500,9 +1500,9 @@ function renderGraphic(jsonData) {
     
     return html;
   }
-  
+
   // ============================================================
-  // 3. PIE (기존 유지)
+  // 3. PIE
   // ============================================================
   else if (parsedData.type === 'pie' && parsedData.labels && parsedData.values) {
     setTimeout(function() {
@@ -1541,9 +1541,9 @@ function renderGraphic(jsonData) {
     
     return html;
   }
-  
+
   // ============================================================
-  // 4. LINE (기존 유지)
+  // 4. LINE
   // ============================================================
   else if (parsedData.type === 'line' && parsedData.series) {
     setTimeout(function() {
@@ -1605,9 +1605,9 @@ function renderGraphic(jsonData) {
     }, 100);
     return html;
   }
-  
+
   // ============================================================
-  // 5. SCATTER (기존 유지)
+  // 5. SCATTER
   // ============================================================
   else if (parsedData.type === 'scatter' && parsedData.points) {
     setTimeout(function() {
@@ -1653,9 +1653,9 @@ function renderGraphic(jsonData) {
     }, 100);
     return html;
   }
-  
+
   // ============================================================
-  // 6. RADAR (기존 유지)
+  // 6. RADAR
   // ============================================================
   else if (parsedData.type === 'radar' && parsedData.labels && parsedData.datasets) {
     setTimeout(function() {
@@ -1706,7 +1706,7 @@ function renderGraphic(jsonData) {
   }
 
   // ============================================================
-  // 7. SCATTER-ONLY (기존에 있던 것, 반드시 포함)
+  // 7. SCATTER-ONLY
   // ============================================================
   else if (parsedData.type === 'scatter-only' && parsedData.points) {
     setTimeout(function() {
@@ -1773,7 +1773,7 @@ function renderGraphic(jsonData) {
   }
 
   // ============================================================
-  // 8. STACKED-BAR (기존에 있던 것)
+  // 8. STACKED-BAR
   // ============================================================
   else if (parsedData.type === 'stacked-bar' && parsedData.labels && parsedData.datasets) {
     var stackedChartId = 'chart_' + Math.random().toString(36).substr(2, 9);
@@ -1829,7 +1829,7 @@ function renderGraphic(jsonData) {
   }
 
   // ============================================================
-  // 9. COMPARE (기존에 있던 것)
+  // 9. COMPARE
   // ============================================================
   else if (parsedData.type === 'compare' && parsedData.graphs) {
     var compareChartId = 'chart_' + Math.random().toString(36).substr(2, 9);
@@ -1932,7 +1932,7 @@ function renderGraphic(jsonData) {
   }
 
   // ============================================================
-  // 10. FUNCTION (신규 - Math.js + Canvas)
+  // 10. FUNCTION (Math.js + Canvas)
   // ============================================================
   else if (parsedData.type === 'function' && parsedData.equation) {
     var funcCanvasId = 'chart_' + Math.random().toString(36).substr(2, 9);
@@ -2125,276 +2125,299 @@ function renderGraphic(jsonData) {
     return funcHtml;
   }
 
- // ============================================================
-// 11. COORDINATE-PLANE (신규) - line + curve 지원
-// ============================================================
-else if (parsedData.type === 'coordinate-plane') {
-  var coordCanvasId = 'coord_' + Math.random().toString(36).substr(2, 9);
-  var coordHtml = '<div style="margin:15px 0;padding:15px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;position:relative;">' +
-    '<canvas id="' + coordCanvasId + '" style="width:100%;height:400px;display:block;border-radius:4px;"></canvas>' +
-    '</div>';
-  
-  setTimeout(function() {
-    var canvas = document.getElementById(coordCanvasId);
-    if (!canvas) return;
+  // ============================================================
+  // 11. COORDINATE-PLANE (완전판 - line + curve + functions + labels + segments)
+  // ============================================================
+  else if (parsedData.type === 'coordinate-plane') {
+    var coordCanvasId = 'coord_' + Math.random().toString(36).substr(2, 9);
+    var coordHtml = '<div style="margin:15px 0;padding:15px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;position:relative;">' +
+      '<canvas id="' + coordCanvasId + '" style="width:100%;height:400px;display:block;border-radius:4px;"></canvas>' +
+      '</div>';
     
-    var rect = canvas.parentElement.getBoundingClientRect();
-    var dpr = window.devicePixelRatio || 1;
-    var w = canvas.parentElement.clientWidth || 600;
-    var h = 400;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    
-    var ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-    
-    var xMin = parsedData.xAxis?.min !== undefined ? parsedData.xAxis.min : -10;
-    var xMax = parsedData.xAxis?.max !== undefined ? parsedData.xAxis.max : 10;
-    var yMin = parsedData.yAxis?.min !== undefined ? parsedData.yAxis.min : -10;
-    var yMax = parsedData.yAxis?.max !== undefined ? parsedData.yAxis.max : 10;
-    
-    var padding = 40;
-    var graphW = w - padding * 2;
-    var graphH = h - padding * 2;
-    
-    function toScreen(px, py) {
-      var sx = padding + ((px - xMin) / (xMax - xMin)) * graphW;
-      var sy = padding + graphH - ((py - yMin) / (yMax - yMin)) * graphH;
-      return { x: sx, y: sy };
-    }
-    
-    // 배경
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, w, h);
-    
-    // 그리드
-    if (parsedData.grid !== false) {
-      ctx.strokeStyle = '#f0f0f0';
-      ctx.lineWidth = 1;
+    setTimeout(function() {
+      console.log("✅ coordinate-plane version 2026 - full support");
+      
+      var canvas = document.getElementById(coordCanvasId);
+      if (!canvas) {
+        console.error("❌ Canvas not found!");
+        return;
+      }
+      
+      var rect = canvas.parentElement.getBoundingClientRect();
+      var dpr = window.devicePixelRatio || 1;
+      var w = canvas.parentElement.clientWidth || 600;
+      var h = 400;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      
+      var ctx = canvas.getContext('2d');
+      ctx.scale(dpr, dpr);
+      
+      var xMin = parsedData.xAxis?.min !== undefined ? parsedData.xAxis.min : -10;
+      var xMax = parsedData.xAxis?.max !== undefined ? parsedData.xAxis.max : 10;
+      var yMin = parsedData.yAxis?.min !== undefined ? parsedData.yAxis.min : -10;
+      var yMax = parsedData.yAxis?.max !== undefined ? parsedData.yAxis.max : 10;
+      
+      var padding = 40;
+      var graphW = w - padding * 2;
+      var graphH = h - padding * 2;
+      
+      function toScreen(px, py) {
+        var sx = padding + ((px - xMin) / (xMax - xMin)) * graphW;
+        var sy = padding + graphH - ((py - yMin) / (yMax - yMin)) * graphH;
+        return { x: sx, y: sy };
+      }
+      
+      // 배경
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, w, h);
+      
+      // 그리드
+      if (parsedData.grid !== false) {
+        ctx.strokeStyle = '#f0f0f0';
+        ctx.lineWidth = 1;
+        var xTick = parsedData.xAxis?.tick || 1;
+        var yTick = parsedData.yAxis?.tick || 1;
+        for (var x = Math.ceil(xMin / xTick) * xTick; x <= xMax; x += xTick) {
+          if (Math.abs(x) < 0.001) continue;
+          var pos = toScreen(x, 0);
+          ctx.beginPath();
+          ctx.moveTo(pos.x, padding);
+          ctx.lineTo(pos.x, padding + graphH);
+          ctx.stroke();
+        }
+        for (var y = Math.ceil(yMin / yTick) * yTick; y <= yMax; y += yTick) {
+          if (Math.abs(y) < 0.001) continue;
+          var pos = toScreen(0, y);
+          ctx.beginPath();
+          ctx.moveTo(padding, pos.y);
+          ctx.lineTo(padding + graphW, pos.y);
+          ctx.stroke();
+        }
+      }
+      
+      // 축
+      ctx.strokeStyle = '#333';
+      ctx.lineWidth = 2;
+      var origin = toScreen(0, 0);
+      if (origin.x >= padding && origin.x <= padding + graphW) {
+        ctx.beginPath();
+        ctx.moveTo(origin.x, padding);
+        ctx.lineTo(origin.x, padding + graphH);
+        ctx.stroke();
+      }
+      if (origin.y >= padding && origin.y <= padding + graphH) {
+        ctx.beginPath();
+        ctx.moveTo(padding, origin.y);
+        ctx.lineTo(padding + graphW, origin.y);
+        ctx.stroke();
+      }
+      
+      // 화살표
+      ctx.fillStyle = '#333';
+      if (origin.x >= padding && origin.x <= padding + graphW) {
+        ctx.beginPath();
+        ctx.moveTo(origin.x, padding);
+        ctx.lineTo(origin.x - 6, padding + 8);
+        ctx.lineTo(origin.x + 6, padding + 8);
+        ctx.fill();
+      }
+      if (origin.y >= padding && origin.y <= padding + graphH) {
+        ctx.beginPath();
+        ctx.moveTo(padding + graphW, origin.y);
+        ctx.lineTo(padding + graphW - 8, origin.y - 6);
+        ctx.lineTo(padding + graphW - 8, origin.y + 6);
+        ctx.fill();
+      }
+      
+      // 축 레이블
+      ctx.fillStyle = '#555';
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillText(parsedData.xAxis?.label || 'x', padding + graphW / 2, h - 18);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(parsedData.yAxis?.label || 'y', 12, padding);
+      
+      // ============================================================
+      // 눈금 및 값 표시 (tick)
+      // ============================================================
       var xTick = parsedData.xAxis?.tick || 1;
       var yTick = parsedData.yAxis?.tick || 1;
+      
+      // x축 눈금
+      ctx.fillStyle = '#555';
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      
       for (var x = Math.ceil(xMin / xTick) * xTick; x <= xMax; x += xTick) {
         if (Math.abs(x) < 0.001) continue;
         var pos = toScreen(x, 0);
         ctx.beginPath();
-        ctx.moveTo(pos.x, padding);
-        ctx.lineTo(pos.x, padding + graphH);
+        ctx.moveTo(pos.x, origin.y - 5);
+        ctx.lineTo(pos.x, origin.y + 5);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
         ctx.stroke();
+        ctx.fillText(x, pos.x, origin.y + 8);
       }
+      
+      // y축 눈금
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      
       for (var y = Math.ceil(yMin / yTick) * yTick; y <= yMax; y += yTick) {
         if (Math.abs(y) < 0.001) continue;
         var pos = toScreen(0, y);
         ctx.beginPath();
-        ctx.moveTo(padding, pos.y);
-        ctx.lineTo(padding + graphW, pos.y);
+        ctx.moveTo(origin.x - 5, pos.y);
+        ctx.lineTo(origin.x + 5, pos.y);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
         ctx.stroke();
+        ctx.fillText(y, origin.x - 8, pos.y);
       }
-    }
-    
-    // 축
-    ctx.strokeStyle = '#333';
-    ctx.lineWidth = 2;
-    var origin = toScreen(0, 0);
-    if (origin.x >= padding && origin.x <= padding + graphW) {
-      ctx.beginPath();
-      ctx.moveTo(origin.x, padding);
-      ctx.lineTo(origin.x, padding + graphH);
-      ctx.stroke();
-    }
-    if (origin.y >= padding && origin.y <= padding + graphH) {
-      ctx.beginPath();
-      ctx.moveTo(padding, origin.y);
-      ctx.lineTo(padding + graphW, origin.y);
-      ctx.stroke();
-    }
-    
-    // 화살표
-    ctx.fillStyle = '#333';
-    if (origin.x >= padding && origin.x <= padding + graphW) {
-      ctx.beginPath();
-      ctx.moveTo(origin.x, padding);
-      ctx.lineTo(origin.x - 6, padding + 8);
-      ctx.lineTo(origin.x + 6, padding + 8);
-      ctx.fill();
-    }
-    if (origin.y >= padding && origin.y <= padding + graphH) {
-      ctx.beginPath();
-      ctx.moveTo(padding + graphW, origin.y);
-      ctx.lineTo(padding + graphW - 8, origin.y - 6);
-      ctx.lineTo(padding + graphW - 8, origin.y + 6);
-      ctx.fill();
-    }
-    
-    // 축 레이블
-    ctx.fillStyle = '#555';
-    ctx.font = '12px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillText(parsedData.xAxis?.label || 'x', padding + graphW / 2, h - 18);
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'bottom';
-    ctx.fillText(parsedData.yAxis?.label || 'y', 12, padding);
-    
-    // ============================================================
-    // 눈금 및 값 표시 (tick)
-    // ============================================================
-    var xTick = parsedData.xAxis?.tick || 1;
-    var yTick = parsedData.yAxis?.tick || 1;
-    
-    // x축 눈금
-    ctx.fillStyle = '#555';
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    
-    for (var x = Math.ceil(xMin / xTick) * xTick; x <= xMax; x += xTick) {
-      if (Math.abs(x) < 0.001) continue;
-      var pos = toScreen(x, 0);
-      ctx.beginPath();
-      ctx.moveTo(pos.x, origin.y - 5);
-      ctx.lineTo(pos.x, origin.y + 5);
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.fillText(x, pos.x, origin.y + 8);
-    }
-    
-    // y축 눈금
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    
-    for (var y = Math.ceil(yMin / yTick) * yTick; y <= yMax; y += yTick) {
-      if (Math.abs(y) < 0.001) continue;
-      var pos = toScreen(0, y);
-      ctx.beginPath();
-      ctx.moveTo(origin.x - 5, pos.y);
-      ctx.lineTo(origin.x + 5, pos.y);
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.fillText(y, origin.x - 8, pos.y);
-    }
-    
-    // 점 표시
-    if (parsedData.points) {
-      parsedData.points.forEach(function(pt) {
-        var screen = toScreen(pt.x, pt.y);
-        ctx.beginPath();
-        ctx.arc(screen.x, screen.y, 5, 0, 2 * Math.PI);
-        ctx.fillStyle = pt.color || '#3498db';
-        ctx.fill();
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        if (pt.label) {
-          ctx.fillStyle = '#333';
-          ctx.font = '13px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.textBaseline = 'bottom';
-          ctx.fillText(pt.label, screen.x, screen.y - 8);
-        }
-      });
-    }
-    
-    // 선분 표시
-    if (parsedData.segments) {
-      parsedData.segments.forEach(function(seg) {
-        var from = toScreen(seg.from[0], seg.from[1]);
-        var to = toScreen(seg.to[0], seg.to[1]);
-        ctx.beginPath();
-        ctx.moveTo(from.x, from.y);
-        ctx.lineTo(to.x, to.y);
-        ctx.strokeStyle = seg.color || '#e74c3c';
-        ctx.lineWidth = seg.lineWidth || 2;
-        ctx.stroke();
-      });
-    }
-    
-    // ============================================================
-    // 곡선 표시 (series) - line + curve 모두 지원
-    // ============================================================
-    if (parsedData.series) {
-      parsedData.series.forEach(function(ser) {
-        if ((ser.type === 'line' || ser.type === 'curve') && ser.points) {
+      
+      // ============================================================
+      // 점 표시 (points)
+      // ============================================================
+      if (parsedData.points) {
+        parsedData.points.forEach(function(pt) {
+          var screen = toScreen(pt.x, pt.y);
           ctx.beginPath();
-          var first = toScreen(ser.points[0][0], ser.points[0][1]);
-          ctx.moveTo(first.x, first.y);
-          for (var k = 1; k < ser.points.length; k++) {
-            var p = toScreen(ser.points[k][0], ser.points[k][1]);
-            ctx.lineTo(p.x, p.y);
-          }
-          ctx.strokeStyle = ser.color || '#e74c3c';
-          ctx.lineWidth = ser.lineWidth || 2;
+          ctx.arc(screen.x, screen.y, 5, 0, 2 * Math.PI);
+          ctx.fillStyle = pt.color || '#3498db';
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 2;
           ctx.stroke();
-        }
-      });
-    }
-    
-    // ============================================================
-    // 함수 곡선 표시 (functions 배열) - Math.js 사용
-    // ============================================================
-    if (parsedData.functions && Array.isArray(parsedData.functions)) {
-      parsedData.functions.forEach(function(func) {
-        var equation = func.equation || '';
-        var domain = func.domain || [xMin, xMax];
-        var color = func.color || '#e74c3c';
-        var lineWidth = func.lineWidth || 3;
-        
-        if (!equation) return;
-        
-        var expr = equation.replace(/y\s*=\s*/, '');
-        var samples = 500;
-        var step = (domain[1] - domain[0]) / samples;
-        var points = [];
-        
-        for (var xVal = domain[0]; xVal <= domain[1]; xVal += step) {
-          try {
-            var node = math.parse(expr);
-            var yVal = node.evaluate({ x: xVal });
-            if (typeof yVal === 'number' && isFinite(yVal) && yVal >= yMin && yVal <= yMax) {
-              points.push({ x: xVal, y: yVal });
-            } else {
-              points.push({ x: xVal, y: NaN });
-            }
-          } catch(e) {
-            points.push({ x: xVal, y: NaN });
+          if (pt.label) {
+            ctx.fillStyle = '#333';
+            ctx.font = '13px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(pt.label, screen.x, screen.y - 8);
           }
-        }
-        
-        ctx.strokeStyle = color;
-        ctx.lineWidth = lineWidth;
-        ctx.lineJoin = 'round';
-        ctx.lineCap = 'round';
-        
-        var i = 0;
-        while (i < points.length) {
-          while (i < points.length && (isNaN(points[i].y) || !isFinite(points[i].y))) i++;
-          if (i >= points.length) break;
-          var start = i;
-          while (i < points.length && !isNaN(points[i].y) && isFinite(points[i].y)) i++;
-          if (i - start > 1) {
+        });
+      }
+      
+      // ============================================================
+      // 선분 표시 (segments)
+      // ============================================================
+      if (parsedData.segments) {
+        parsedData.segments.forEach(function(seg) {
+          var from = toScreen(seg.from[0], seg.from[1]);
+          var to = toScreen(seg.to[0], seg.to[1]);
+          ctx.beginPath();
+          ctx.moveTo(from.x, from.y);
+          ctx.lineTo(to.x, to.y);
+          ctx.strokeStyle = seg.color || '#2c3e50';
+          ctx.lineWidth = seg.lineWidth || 2;
+          ctx.stroke();
+        });
+      }
+      
+      // ============================================================
+      // 곡선 표시 (series) - line + curve 모두 지원
+      // ============================================================
+      if (parsedData.series) {
+        parsedData.series.forEach(function(ser) {
+          if ((ser.type === 'line' || ser.type === 'curve') && ser.points) {
             ctx.beginPath();
-            var p = toScreen(points[start].x, points[start].y);
-            ctx.moveTo(p.x, p.y);
-            for (var j = start + 1; j < i; j++) {
-              p = toScreen(points[j].x, points[j].y);
+            var first = toScreen(ser.points[0][0], ser.points[0][1]);
+            ctx.moveTo(first.x, first.y);
+            for (var k = 1; k < ser.points.length; k++) {
+              var p = toScreen(ser.points[k][0], ser.points[k][1]);
               ctx.lineTo(p.x, p.y);
             }
+            ctx.strokeStyle = ser.color || '#e74c3c';
+            ctx.lineWidth = ser.lineWidth || 2;
             ctx.stroke();
           }
-        }
-      });
-    }
+        });
+      }
+      
+      // ============================================================
+      // 함수 곡선 표시 (functions 배열) - Math.js 사용
+      // ============================================================
+      if (parsedData.functions && Array.isArray(parsedData.functions)) {
+        parsedData.functions.forEach(function(func) {
+          var equation = func.equation || '';
+          var domain = func.domain || [xMin, xMax];
+          var color = func.color || '#e74c3c';
+          var lineWidth = func.lineWidth || 3;
+          
+          if (!equation) return;
+          
+          var expr = equation.replace(/y\s*=\s*/, '');
+          var samples = 500;
+          var step = (domain[1] - domain[0]) / samples;
+          var points = [];
+          
+          for (var xVal = domain[0]; xVal <= domain[1]; xVal += step) {
+            try {
+              var node = math.parse(expr);
+              var yVal = node.evaluate({ x: xVal });
+              if (typeof yVal === 'number' && isFinite(yVal) && yVal >= yMin && yVal <= yMax) {
+                points.push({ x: xVal, y: yVal });
+              } else {
+                points.push({ x: xVal, y: NaN });
+              }
+            } catch(e) {
+              points.push({ x: xVal, y: NaN });
+            }
+          }
+          
+          ctx.strokeStyle = color;
+          ctx.lineWidth = lineWidth;
+          ctx.lineJoin = 'round';
+          ctx.lineCap = 'round';
+          
+          var i = 0;
+          while (i < points.length) {
+            while (i < points.length && (isNaN(points[i].y) || !isFinite(points[i].y))) i++;
+            if (i >= points.length) break;
+            var start = i;
+            while (i < points.length && !isNaN(points[i].y) && isFinite(points[i].y)) i++;
+            if (i - start > 1) {
+              ctx.beginPath();
+              var p = toScreen(points[start].x, points[start].y);
+              ctx.moveTo(p.x, p.y);
+              for (var j = start + 1; j < i; j++) {
+                p = toScreen(points[j].x, points[j].y);
+                ctx.lineTo(p.x, p.y);
+              }
+              ctx.stroke();
+            }
+          }
+        });
+      }
+      
+      // ============================================================
+      // 레이블 표시 (labels) - setTimeout 안에 포함
+      // ============================================================
+      if (parsedData.labels) {
+        parsedData.labels.forEach(function(label) {
+          var screen = toScreen(label.x, label.y);
+          ctx.fillStyle = label.color || '#333';
+          ctx.font = (label.fontSize || 14) + 'px sans-serif';
+          ctx.textAlign = label.align || 'center';
+          ctx.textBaseline = label.baseline || 'middle';
+          ctx.fillText(label.text, screen.x, screen.y);
+        });
+      }
+      
+    }, 100);
     
-  }, 100);
-  
-  return coordHtml;
-}
+    return coordHtml;
+  }
 
   // ============================================================
-  // 12. SHAPE (신규)
+  // 12. SHAPE
   // ============================================================
   else if (parsedData.type === 'shape') {
     var shapeCanvasId = 'shape_' + Math.random().toString(36).substr(2, 9);
@@ -2672,7 +2695,7 @@ else if (parsedData.type === 'coordinate-plane') {
   }
 
   // ============================================================
-  // 13. HISTOGRAM (신규)
+  // 13. HISTOGRAM
   // ============================================================
   else if (parsedData.type === 'histogram' && parsedData.bins && parsedData.counts) {
     setTimeout(function() {
@@ -2719,7 +2742,7 @@ else if (parsedData.type === 'coordinate-plane') {
   }
 
   // ============================================================
-  // 14. DOT-PLOT (신규)
+  // 14. DOT-PLOT
   // ============================================================
   else if (parsedData.type === 'dot-plot' && parsedData.data) {
     setTimeout(function() {
