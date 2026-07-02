@@ -2412,6 +2412,21 @@ else if (parsedData.type === 'coordinate-plane') {
     }
     
   }, 100);
+
+
+// ============================================================
+// 레이블 표시 (labels)
+// ============================================================
+if (parsedData.labels) {
+  parsedData.labels.forEach(function(label) {
+    var screen = toScreen(label.x, label.y);
+    ctx.fillStyle = label.color || '#333';
+    ctx.font = (label.fontSize || 14) + 'px sans-serif';
+    ctx.textAlign = label.align || 'center';
+    ctx.textBaseline = label.baseline || 'middle';
+    ctx.fillText(label.text, screen.x, screen.y);
+  });
+}
   
   return coordHtml;
 }
