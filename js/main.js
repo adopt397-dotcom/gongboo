@@ -1404,9 +1404,8 @@ function renderGraphic(jsonData) {
   }
   
   // ============================================================
-  // 2. BAR
-  // ============================================================
-
+// 2. BAR
+// ============================================================
 else if (parsedData.type === 'bar') {
   console.log("✅ BAR rendering started");
   
@@ -1455,12 +1454,21 @@ else if (parsedData.type === 'bar') {
     return '<div style="padding:10px;color:#999;text-align:center;">📊 No data for bar chart</div>';
   }
   
-  setTimeout(function() {
+  // 캔버스를 찾지 못할 경우를 대비해 재시도 로직 추가
+  function renderBarChart(attempt) {
+    attempt = attempt || 0;
     var ctx = document.getElementById(chartId);
     if (!ctx) {
-      console.error("❌ Canvas not found for bar chart!");
-      return;
+      if (attempt < 5) {
+        console.log("⏳ Canvas not ready, retrying... (" + (attempt+1) + "/5)");
+        setTimeout(function() { renderBarChart(attempt + 1); }, 200);
+        return;
+      } else {
+        console.error("❌ Canvas not found after 5 attempts!");
+        return;
+      }
     }
+    
     if (window._chartInstances && window._chartInstances[chartId]) {
       window._chartInstances[chartId].destroy();
     }
@@ -1494,8 +1502,13 @@ else if (parsedData.type === 'bar') {
       canvas.parentElement.style.height = '400px';
       window._chartInstances[chartId] = new Chart(canvas, cc);
       console.log("✅ Bar chart rendered!");
+    } else {
+      console.error("❌ Failed to render bar chart");
     }
-  }, 100);
+  }
+  
+  // 100ms 후 첫 시도
+  setTimeout(function() { renderBarChart(); }, 100);
   
   return html;
 }
