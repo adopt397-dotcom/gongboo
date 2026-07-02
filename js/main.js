@@ -1606,16 +1606,15 @@ else if (parsedData.type === 'bar') {
   }
   
 // ============================================================
-// 5. SCATTER (series + points 모두 지원)
+// 5. SCATTER
 // ============================================================
 else if (parsedData.type === 'scatter') {
   console.log("✅ SCATTER rendering started");
-  console.log("📊 parsedData:", parsedData);
   
   setTimeout(function() {
     var ctx = document.getElementById(chartId);
     if (!ctx) {
-      console.error("❌ Canvas not found for scatter!");
+      console.error("❌ Canvas not found!");
       return;
     }
     if (window._chartInstances && window._chartInstances[chartId]) {
@@ -1625,49 +1624,33 @@ else if (parsedData.type === 'scatter') {
     
     var datasets = [];
     
-    // ===== series 배열 처리 =====
     if (parsedData.series && Array.isArray(parsedData.series)) {
       parsedData.series.forEach(function(ser, i) {
         var color = colors[i % colors.length];
-        var points = ser.points || [];
         datasets.push({
           label: ser.name || 'Series ' + (i+1),
-          data: points.map(function(p) { return { x: p.x, y: p.y }; }),
+          data: (ser.points || []).map(function(p) { return { x: p.x, y: p.y }; }),
           backgroundColor: color,
           borderColor: color,
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          showLine: false
+          pointRadius: 5,
+          pointHoverRadius: 7
         });
       });
-    }
-    // ===== points 직접 사용 =====
-    else if (parsedData.points) {
-      var points = parsedData.points.map(function(p) {
-        return { x: p.x, y: p.y };
-      });
+    } else if (parsedData.points) {
       datasets.push({
         label: parsedData.title || 'Data',
-        data: points,
+        data: parsedData.points.map(function(p) { return { x: p.x, y: p.y }; }),
         backgroundColor: '#3498db',
         borderColor: '#2980b9',
-        pointRadius: 6,
-        pointHoverRadius: 8,
-        showLine: false
+        pointRadius: 5,
+        pointHoverRadius: 7
       });
     }
     
-    console.log("📊 datasets:", datasets);
-    
     if (datasets.length === 0) {
-      console.warn("⚠️ No data for scatter plot");
+      console.warn("⚠️ No data");
       return;
     }
-    
-    var xMin = parsedData.xAxis?.min !== undefined ? parsedData.xAxis.min : undefined;
-    var xMax = parsedData.xAxis?.max !== undefined ? parsedData.xAxis.max : undefined;
-    var yMin = parsedData.yAxis?.min !== undefined ? parsedData.yAxis.min : undefined;
-    var yMax = parsedData.yAxis?.max !== undefined ? parsedData.yAxis.max : undefined;
     
     var cc = {
       type: 'scatter',
@@ -1680,18 +1663,8 @@ else if (parsedData.type === 'scatter') {
           legend: { position: 'bottom' }
         },
         scales: {
-          x: { 
-            title: { display: true, text: parsedData.xAxis?.label || 'x' }, 
-            grid: { color: '#e0e0e0' },
-            min: xMin,
-            max: xMax
-          },
-          y: { 
-            title: { display: true, text: parsedData.yAxis?.label || 'y' }, 
-            grid: { color: '#e0e0e0' },
-            min: yMin,
-            max: yMax
-          }
+          x: { title: { display: true, text: parsedData.xAxis?.label || 'x' }, min: parsedData.xAxis?.min, max: parsedData.xAxis?.max, grid: { color: '#e0e0e0' } },
+          y: { title: { display: true, text: parsedData.yAxis?.label || 'y' }, min: parsedData.yAxis?.min, max: parsedData.yAxis?.max, grid: { color: '#e0e0e0' } }
         }
       }
     };
