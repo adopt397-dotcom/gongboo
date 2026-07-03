@@ -423,10 +423,10 @@ async function load50Questions(uiStartNumber) {
         var passageText = parsed.passage || parsed.P || parsed.p || parsed.지문 || '';
         
         var choices = {};
-        choices['1'] = parsed['1'] || parsed.choice1 || 'Option A';
-        choices['2'] = parsed['2'] || parsed.choice2 || 'Option B';
-        choices['3'] = parsed['3'] || parsed.choice3 || 'Option C';
-        choices['4'] = parsed['4'] || parsed.choice4 || 'Option D';
+choices['1'] = parsed['1'] || parsed.choice1 || '';
+choices['2'] = parsed['2'] || parsed.choice2 || '';
+choices['3'] = parsed['3'] || parsed.choice3 || '';
+choices['4'] = parsed['4'] || parsed.choice4 || '';
         
         var finalAnswer = '1';
         if (parsed.A !== undefined && parsed.A !== null && parsed.A !== "") {
