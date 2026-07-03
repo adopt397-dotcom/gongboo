@@ -423,10 +423,10 @@ async function load50Questions(uiStartNumber) {
         var passageText = parsed.passage || parsed.P || parsed.p || parsed.지문 || '';
         
         var choices = {};
-choices['1'] = parsed['1'] || parsed.choice1 || '';
-choices['2'] = parsed['2'] || parsed.choice2 || '';
-choices['3'] = parsed['3'] || parsed.choice3 || '';
-choices['4'] = parsed['4'] || parsed.choice4 || '';
+choices['1'] = parsed['1'] || '';
+choices['2'] = parsed['2'] || '';
+choices['3'] = parsed['3'] || '';
+choices['4'] = parsed['4'] || '';
         
         var finalAnswer = '1';
         if (parsed.A !== undefined && parsed.A !== null && parsed.A !== "") {
@@ -885,7 +885,8 @@ function renderCurrentQuestion() {
     var key = validKeys[idx];
     var choiceNum = parseInt(key);
     var letter = getAnswerLetter(idx + 1);
-    var choiceText = q.choices[key] || 'Option ' + letter;
+   var choiceText = q.choices[key] || '';
+if (!choiceText) continue;
     var isSelected = (answered === choiceNum);
     var isCorrectChoice = (choiceNum === displayAnswer);
     var showCorrect = (answered !== null && answered !== undefined && answered !== -1);
