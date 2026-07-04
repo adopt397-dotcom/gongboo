@@ -1592,6 +1592,36 @@ else if (parsedData.type === 'bar') {
           fill: s.fill || false
         };
       });
+
+      // ★ Functions (함수 그래프)
+      if (parsedData.functions) {
+          parsedData.functions.forEach(function(fn) {
+              var pts = [];
+              var domain = fn.domain || [xMin, xMax];
+              var step = (domain[1] - domain[0]) / 200;
+              var eqFn = parseFunction(fn.equation);
+              for (var x = domain[0]; x <= domain[1]; x += step) {
+                  try {
+                      var y = eqFn(x);
+                      if (isFinite(y) && Math.abs(y) < 100) {
+                          pts.push({ x: x, y: y });
+                      }
+                  } catch(e) {}
+              }
+              if (pts.length > 1) {
+                  datasets.push({
+                      label: fn.label || fn.equation || 'f(x)',
+                      data: pts,
+                      showLine: true,
+                      borderColor: fn.color || '#e74c3c',
+                      borderWidth: fn.lineWidth || 2,
+                      pointRadius: 0,
+                      tension: 0.3,
+                      fill: false
+                  });
+              }
+          });
+      }
       
       var cc = {
         type: 'scatter',
