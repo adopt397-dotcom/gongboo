@@ -439,9 +439,9 @@ async function load50Questions(uiStartNumber) {
           parsed = { question: String(item), answer: '1' };
         }
         
-        // ★★★★★ LaTeX 변환 적용 ★★★★★
-        var questionText = parsed.Q || parsed.question || parsed.q || parsed.문제 || parsed.text || 'Question ' + (uiStartNumber + idx);
-        questionText = renderLatex(questionText);
+       // ★★★★★ LaTeX 변환 적용 ★★★★★
+        var rawQuestion = q.question || 'No question text';
+        var questionText = renderLatex(rawQuestion);
         
         var rawPassage = parsed.passage || parsed.P || parsed.p || parsed.지문 || '';
         var passageText = renderLatex(rawPassage);
