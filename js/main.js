@@ -440,8 +440,8 @@ async function load50Questions(uiStartNumber) {
         }
         
         // ★★★★★ LaTeX 변환 적용 ★★★★★
-        var rawQuestion = parsed.Q || parsed.question || parsed.q || parsed.문제 || parsed.text || 'Question ' + (uiStartNumber + idx);
-        var questionText = renderLatex(rawQuestion);
+        var questionText = parsed.Q || parsed.question || parsed.q || parsed.문제 || parsed.text || 'Question ' + (uiStartNumber + idx);
+        questionText = renderLatex(questionText);
         
         var rawPassage = parsed.passage || parsed.P || parsed.p || parsed.지문 || '';
         var passageText = renderLatex(rawPassage);
