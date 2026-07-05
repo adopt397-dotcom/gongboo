@@ -896,19 +896,27 @@ function renderCurrentQuestion() {
   }
   var displayAnswer = actualAnswerKey !== null ? validKeys.indexOf(actualAnswerKey) + 1 : parseInt(originalAnswerKey);
   
+  // ★★★★★ LaTeX 변환 적용 (문제 텍스트) ★★★★★
+  var rawQuestion = q.question || 'No question text';
+  var questionText = renderLatex(rawQuestion);
+  
   var html = '<div class="question-card">' +
     '<div class="q-num">' + headerText + '</div>' +
     passageHtml +
     renderGraphic(q.graphic) +
-    '<div class="question-text">' + escapeHtml(q.question || 'No question text') + '</div>' +
+    '<div class="question-text">' + questionText + '</div>' +
     '<div class="choices">';
   
   for (var idx = 0; idx < validKeys.length; idx++) {
     var key = validKeys[idx];
     var choiceNum = parseInt(key);
     var letter = getAnswerLetter(idx + 1);
-   var choiceText = q.choices[key] || '';
-if (!choiceText) continue;
+    var choiceText = q.choices[key] || '';
+    if (!choiceText) continue;
+    
+    // ★★★★★ 선택지도 LaTeX 변환 ★★★★★
+    var renderedChoice = renderLatex(choiceText);
+    
     var isSelected = (answered === choiceNum);
     var isCorrectChoice = (choiceNum === displayAnswer);
     var showCorrect = (answered !== null && answered !== undefined && answered !== -1);
@@ -920,12 +928,21 @@ if (!choiceText) continue;
     }
     html += '<div class="' + cls + '" data-choice="' + choiceNum + '">' +
       '<span class="choice-letter">' + letter + '</span>' +
-      '<span>' + escapeHtml(choiceText) + '</span>' +
+      '<span>' + renderedChoice + '</span>' +
       '</div>';
   }
   html += '</div></div>';
   
   DOM.questionContainer.innerHTML = html;
+  
+  // ★★★★★ MathJax 렌더링 요청 ★★★★★
+  if (window.MathJax && MathJax.typesetPromise) {
+    var elements = DOM.questionContainer.querySelectorAll('.question-text, .choice span');
+    MathJax.typesetPromise(Array.from(elements)).catch(function(err) {
+      console.warn('MathJax 렌더링 오류:', err);
+    });
+  }
+  
   console.log('✅ Question rendered');
   
   var choiceEls = DOM.questionContainer.querySelectorAll('.choice:not(.disabled)');
@@ -940,6 +957,29 @@ if (!choiceText) continue;
       showExplanation();
     });
   });
+  
+  if (answered !== null && answered !== undefined && answered !== -1) {
+    showExplanation();
+  } else {
+    DOM.explanationBox.classList.remove('show');
+  }
+  
+  var isLastQuestion = (currentIndex >= currentQuestions.length - 1);
+  if (isLastQuestion) {
+    DOM.nextBtn.style.display = 'none';
+    DOM.submitBtn.style.display = 'inline-block';
+    DOM.submitBtn.innerHTML = 'SUBMIT (Enter)';
+    var isAnswered = (answered !== null && answered !== undefined && answered !== -1);
+    DOM.submitBtn.disabled = !isAnswered;
+    DOM.submitBtn.style.background = isAnswered ? '#27ae60' : '#95a5a6';
+    DOM.submitBtn.style.color = isAnswered ? 'white' : '#666';
+  } else {
+    DOM.nextBtn.style.display = 'inline-block';
+    DOM.nextBtn.innerHTML = 'NEXT (N)';
+    DOM.submitBtn.style.display = 'none';
+  }
+  DOM.prevBtn.disabled = (currentIndex === 0);
+}
   
   if (answered !== null && answered !== undefined && answered !== -1) {
     showExplanation();
