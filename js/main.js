@@ -12,7 +12,7 @@ var LANG = {
   resumeDetail: "{answered}/{total} answered · {time}",
   resumeHint: "Click to continue your previous session",
   qPrefix: "Question",
-  of: "/",
+  of: "/",load50Questions
   originalPrefix: "(Original #",
   originalSuffix: ")",
   prevBtn: "◀ PREV",
@@ -336,6 +336,28 @@ function updateSetSelector() {
   if (DOM.startNumberInput) {
     DOM.startNumberInput.value = '1';
   }
+}
+// ============================================================
+// 여기에 renderLatex 함수 추가
+// ============================================================
+function renderLatex(text) {
+    if (!text) return '';
+    return text
+        .replace(/\\\(/g, '\\(')
+        .replace(/\\\)/g, '\\)')
+        .replace(/\\\[/g, '\\[')
+        .replace(/\\\]/g, '\\]')
+        .replace(/\\frac/g, '\\frac')
+        .replace(/\\sqrt/g, '\\sqrt')
+        .replace(/\\sum/g, '\\sum')
+        .replace(/\\int/g, '\\int');
+}
+
+// ============================================================
+// load50Questions 함수 (renderLatex 바로 아래)
+// ============================================================
+async function load50Questions(uiStartNumber) {
+    // ... 기존 코드 ...
 }
 
 async function load50Questions(uiStartNumber) {
