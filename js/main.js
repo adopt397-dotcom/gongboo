@@ -2,6 +2,22 @@
 // x: 선행 코드 (LANG, 변수, 유틸리티, 퀴즈 함수, 타이머, 렌더링, 초기화)
 // ============================================================
 
+// ============================================================
+// LaTeX → HTML 변환 함수 (최우선 선언)
+// ============================================================
+function renderLatex(text) {
+    if (!text) return '';
+    return text
+        .replace(/\\\(/g, '\\(')
+        .replace(/\\\)/g, '\\)')
+        .replace(/\\\[/g, '\\[')
+        .replace(/\\\]/g, '\\]')
+        .replace(/\\frac/g, '\\frac')
+        .replace(/\\sqrt/g, '\\sqrt')
+        .replace(/\\sum/g, '\\sum')
+        .replace(/\\int/g, '\\int');
+}
+
 var LANG = {
   enterNumber: "Enter Starting Number",
   enterSub: "Enter the question number to begin",
@@ -12,7 +28,7 @@ var LANG = {
   resumeDetail: "{answered}/{total} answered · {time}",
   resumeHint: "Click to continue your previous session",
   qPrefix: "Question",
-  of: "/",load50Questions
+  of: "/",
   originalPrefix: "(Original #",
   originalSuffix: ")",
   prevBtn: "◀ PREV",
@@ -336,21 +352,6 @@ function updateSetSelector() {
   if (DOM.startNumberInput) {
     DOM.startNumberInput.value = '1';
   }
-}
-// ============================================================
-// 여기에 renderLatex 함수 추가
-// ============================================================
-function renderLatex(text) {
-    if (!text) return '';
-    return text
-        .replace(/\\\(/g, '\\(')
-        .replace(/\\\)/g, '\\)')
-        .replace(/\\\[/g, '\\[')
-        .replace(/\\\]/g, '\\]')
-        .replace(/\\frac/g, '\\frac')
-        .replace(/\\sqrt/g, '\\sqrt')
-        .replace(/\\sum/g, '\\sum')
-        .replace(/\\int/g, '\\int');
 }
 
 // ============================================================
