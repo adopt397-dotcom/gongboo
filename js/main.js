@@ -2,23 +2,6 @@
 // x: 선행 코드 (LANG, 변수, 유틸리티, 퀴즈 함수, 타이머, 렌더링, 초기화)
 // ============================================================
 
-// ============================================================
-// LaTeX → HTML 변환 함수 (최우선 선언)
-// ============================================================
-function renderLatex(text) {
-    if (!text) return '';
-    return text
-        .replace(/\\\(/g, '\\(')
-        .replace(/\\\)/g, '\\)')
-        .replace(/\\\[/g, '\\[')
-        .replace(/\\\]/g, '\\]')
-        .replace(/\\frac/g, '\\frac')
-        .replace(/\\sqrt/g, '\\sqrt')
-        .replace(/\\sum/g, '\\sum')
-        .replace(/\\int/g, '\\int');
-}
-window.renderLatex = renderLatex;
-
 var LANG = {
   enterNumber: "Enter Starting Number",
   enterSub: "Enter the question number to begin",
@@ -29,7 +12,7 @@ var LANG = {
   resumeDetail: "{answered}/{total} answered · {time}",
   resumeHint: "Click to continue your previous session",
   qPrefix: "Question",
-  of: "/",
+  of: "/",load50Questions
   originalPrefix: "(Original #",
   originalSuffix: ")",
   prevBtn: "◀ PREV",
@@ -354,6 +337,21 @@ function updateSetSelector() {
     DOM.startNumberInput.value = '1';
   }
 }
+// ============================================================
+// 여기에 renderLatex 함수 추가
+// ============================================================
+function renderLatex(text) {
+    if (!text) return '';
+    return text
+        .replace(/\\\(/g, '\\(')
+        .replace(/\\\)/g, '\\)')
+        .replace(/\\\[/g, '\\[')
+        .replace(/\\\]/g, '\\]')
+        .replace(/\\frac/g, '\\frac')
+        .replace(/\\sqrt/g, '\\sqrt')
+        .replace(/\\sum/g, '\\sum')
+        .replace(/\\int/g, '\\int');
+}
 
 // ============================================================
 // load50Questions 함수 (LaTeX 변환 포함)
@@ -439,8 +437,8 @@ async function load50Questions(uiStartNumber) {
           parsed = { question: String(item), answer: '1' };
         }
         
-       // ★★★★★ LaTeX 변환 적용 ★★★★★
-        var rawQuestion = q.question || 'No question text';
+        // ★★★★★ LaTeX 변환 적용 ★★★★★
+        var rawQuestion = parsed.Q || parsed.question || parsed.q || parsed.문제 || parsed.text || 'Question ' + (uiStartNumber + idx);
         var questionText = renderLatex(rawQuestion);
         
         var rawPassage = parsed.passage || parsed.P || parsed.p || parsed.지문 || '';
@@ -2916,8 +2914,7 @@ export {
     startWrongOnlyReview,
     saveProgress,
     loadProgress,
-    clearProgress,
-    renderLatex 
+    clearProgress
 };
 
 window.initialize = initialize;
@@ -2937,3 +2934,4 @@ window.loadProgress = loadProgress;
 window.clearProgress = clearProgress;
 
 console.log("✅ Full main.js loaded with all functions!");
+
