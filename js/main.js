@@ -17,6 +17,7 @@ function renderLatex(text) {
         .replace(/\\sum/g, '\\sum')
         .replace(/\\int/g, '\\int');
 }
+window.renderLatex = renderLatex;
 
 var LANG = {
   enterNumber: "Enter Starting Number",
@@ -2915,7 +2916,8 @@ export {
     startWrongOnlyReview,
     saveProgress,
     loadProgress,
-    clearProgress
+    clearProgress,
+    renderLatex 
 };
 
 window.initialize = initialize;
