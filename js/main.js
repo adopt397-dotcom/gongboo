@@ -32,7 +32,7 @@ var LANG = {
 // ============================================================
 // 0200 - API URL
 // ============================================================
-var API_URL = "https://script.google.com/macros/s/AKfycbwYnCi7myER0R4djAV7CLW9Y1aTa-mjFSk_y_8vCD_p8vN78Sr5JeUB0WEqJR0_OTuG/exec";
+var API_URL = "https://script.google.com/macros/s/AKfycbwYnCi7myER0R4djAV7CLW9Y1aTa-mjFSk_y_8vcD_p8vN78Sr5JeUB0WEqJR0_OTuG/exec";
 var ORIGINAL_API_URL = API_URL;
 var MEMBER_API_URL = API_URL;
 
