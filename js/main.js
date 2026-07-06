@@ -1,503 +1,1123 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SAT Quiz - Adaptive Learning Platform</title>
+// ============================================================
+// 0000 - main.js 통합 (SAT Quiz + 회원관리)
+// ============================================================
 
-  <!-- ============================================================ -->
-  <!-- BLOCK 06: CSS (통합) -->
-  <!-- ============================================================ -->
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Segoe UI', 'Malgun Gothic', sans-serif;
-      background: #f0f2f5;
-      color: #1a1a2e;
-      min-height: 100vh;
-    }
-    #splashOverlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      color: #fff;
-      transition: opacity 0.8s;
-    }
-    #splashOverlay .icon { font-size: 4rem; margin-bottom: 16px; }
-    #splashOverlay .title { font-size: 2.4rem; font-weight: 800; letter-spacing: -1px; }
-    #splashOverlay .title span { color: #f5a623; }
-    #splashOverlay .subtitle { font-size: 1rem; opacity: 0.6; margin-top: 4px; letter-spacing: 4px; font-weight: 300; }
-    #splashOverlay .bar-track { width: 280px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 4px; overflow: hidden; margin-top: 30px; }
-    #splashOverlay .bar-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #f5a623, #e94560); border-radius: 4px; transition: width 0.5s ease; }
-    #splashOverlay .status-text { font-size: 0.85rem; opacity: 0.5; margin-top: 14px; font-weight: 300; letter-spacing: 1px; }
-    #splashOverlay .error-msg { color: #ff6b6b; font-size: 0.9rem; margin-top: 15px; display: none; }
-    #splashOverlay .retry-btn { margin-top: 20px; padding: 12px 40px; font-size: 16px; font-weight: 700; background: #f5a623; color: #fff; border: none; border-radius: 12px; cursor: pointer; display: none; transition: all 0.3s; }
-    #splashOverlay .retry-btn:hover { background: #e0941a; transform: scale(1.03); }
-    #mainContainer { display: none; max-width: 820px; margin: 0 auto; padding: 20px; }
-    .header {
-      text-align: center;
-      padding: 25px 20px 20px;
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      border-radius: 20px;
-      margin-bottom: 25px;
-      color: #fff;
-      position: relative;
-      overflow: hidden;
-    }
-    .header::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: radial-gradient(ellipse at 30% 50%, rgba(245, 166, 35, 0.05) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    .sat-logo { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; position: relative; z-index: 1; }
-    .sat-icon { font-size: 1.6rem; }
-    .sat-title { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.5px; background: linear-gradient(90deg, #fff, #f5a623); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .sat-badge { background: rgba(245, 166, 35, 0.2); border: 1px solid rgba(245, 166, 35, 0.4); color: #f5a623; font-size: 0.6rem; font-weight: 700; padding: 2px 12px; border-radius: 20px; letter-spacing: 1px; text-transform: uppercase; -webkit-text-fill-color: #f5a623; }
-    .sat-sub { font-size: 0.7rem; opacity: 0.5; letter-spacing: 4px; margin-top: 4px; font-weight: 300; position: relative; z-index: 1; }
-    .setup-area { padding: 30px 25px; background: #fff; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); display: none; }
-    .cards-container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 680px; margin: 0 auto; }
-    .card { border-radius: 18px; padding: 24px 20px; transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; }
-    .card-new { background: #fff; border: 2px solid rgba(0,0,0,0.06); box-shadow: 0 4px 20px rgba(0,0,0,0.04); }
-    .card-new:hover { border-color: #f5a623; box-shadow: 0 6px 30px rgba(0,0,0,0.08); transform: translateY(-2px); }
-    .card-resume { background: #fff; border: 2px solid #ffd700; box-shadow: 0 4px 20px rgba(255,215,0,0.12); cursor: pointer; justify-content: center; min-height: 200px; }
-    .card-resume:hover { border-color: #f5a623; box-shadow: 0 6px 30px rgba(255,215,0,0.20); transform: translateY(-2px); }
-    .card-icon { font-size: 2.4rem; }
-    .card-title { font-weight: 700; font-size: 1.2rem; letter-spacing: 0.5px; margin-top: 4px; }
-    .card-title-new { color: #2c3e50; }
-    .card-title-resume { color: #f5a623; }
-    .card-sub { font-size: 0.9rem; color: #666; margin-top: 2px; font-weight: 400; }
-    .card-sub-resume { color: #888; }
-    .input-wrapper { width: 100%; margin-top: 8px; }
-    .input-wrapper input,
-    .input-wrapper select {
-      width: 100%;
-      padding: 12px 14px;
-      font-size: 15px;
-      font-weight: 600;
-      border: 2px solid #ddd;
-      border-radius: 12px;
-      text-align: center;
-      background: #f8f9fa;
-      outline: none;
-      transition: all 0.3s;
-      color: #1a1a2e;
-      box-sizing: border-box;
-    }
-    .input-wrapper input:focus,
-    .input-wrapper select:focus { border-color: #f5a623; box-shadow: 0 0 20px rgba(245,166,35,0.10); background: #fff; }
-    .input-wrapper input::placeholder { color: #aaa; font-weight: 400; }
-    .input-wrapper select {
-      cursor: pointer;
-      appearance: none;
-      -webkit-appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 14px center;
-    }
-    .btn-start {
-      width: 100%;
-      padding: 14px;
-      margin-top: 10px;
-      font-size: 17px;
-      font-weight: 700;
-      background: #f5a623;
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.3s;
-      letter-spacing: 0.5px;
-      box-shadow: 0 2px 10px rgba(245,166,35,0.25);
-    }
-    .btn-start:hover { background: #e0941a; transform: scale(1.02); box-shadow: 0 4px 20px rgba(245,166,35,0.35); }
-    .btn-start:disabled { opacity: 0.6; cursor: wait; transform: none; }
-    #savedBadgeContainer { width: 100%; margin-top: 8px; }
-    .resume-badge { background: #fef9e7; border-radius: 12px; padding: 14px 12px; border: 2px solid #ffd700; cursor: pointer; transition: all 0.3s; width: 100%; text-align: center; }
-    .resume-badge:hover { background: #fef3d0; border-color: #f5a623; transform: scale(1.01); }
-    .resume-badge .count { font-weight: 700; color: #2c3e50; font-size: 1rem; }
-    .resume-badge .time { font-size: 0.75rem; color: #888; margin-top: 2px; }
-    .resume-badge .hint { font-size: 0.7rem; color: #f5a623; margin-top: 4px; font-weight: 500; }
-    .no-session { background: #f8f9fa; border-radius: 12px; padding: 14px 12px; border: 2px dashed #ddd; width: 100%; text-align: center; font-size: 0.8rem; color: #aaa; }
-    .no-session small { display: block; font-size: 0.65rem; color: #ccc; margin-top: 2px; }
-    .card-hint { font-size: 0.7rem; color: #aaa; margin-top: 6px; font-weight: 400; }
-    .bottom-hint { margin-top: 18px; color: #999; font-size: 0.8rem; letter-spacing: 0.3px; border-top: 1px solid #eee; padding-top: 14px; font-weight: 400; text-align: center; }
-    .quiz-main { padding: 10px 0; display: none; }
-    .progress-area { background: #f8f9fa; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; justify-content: space-between; flex-wrap: wrap; align-items: center; display: none; }
-    .progress-count { background: #fff; padding: 6px 16px; border-radius: 30px; font-weight: 700; border: 1px solid #3498db; font-size: 0.9rem; }
-    .progress-bar-container { width: 100%; background: #ddd; border-radius: 10px; height: 8px; margin-top: 6px; }
-    .progress-bar { width: 0%; background: #27ae60; border-radius: 10px; height: 8px; transition: width 0.3s; }
-    .review-banner { background: #e67e22; color: #fff; padding: 10px 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-weight: 700; display: none; }
-    .exit-review-btn { background: #fff; color: #e67e22; border: none; padding: 5px 14px; border-radius: 20px; cursor: pointer; font-weight: 700; font-size: 0.85rem; }
-    .question-card { background: #fff; border: 2px solid #e9ecef; border-radius: 16px; padding: 20px; margin-bottom: 16px; }
-    .q-num { display: inline-block; background: #2c3e50; color: #fff; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 12px; }
-    .question-text { font-size: 1.05rem; line-height: 1.6; margin: 12px 0 20px; font-weight: 600; }
-    .choices { display: flex; flex-direction: column; gap: 10px; }
-    .choice { display: flex; align-items: center; padding: 12px 16px; background: #fff; border: 2px solid #ddd; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
-    .choice:hover:not(.disabled) { background: #f0f7ff; border-color: #3498db; transform: translateX(4px); }
-    .choice-letter { width: 30px; height: 30px; background: #3498db; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; margin-right: 14px; flex-shrink: 0; font-size: 0.85rem; }
-    .choice.correct { background: #e9f7ef; border-color: #27ae60; }
-    .choice.correct .choice-letter { background: #27ae60; }
-    .choice.incorrect { background: #fde8e8; border-color: #e74c3c; }
-    .choice.incorrect .choice-letter { background: #e74c3c; }
-    .choice.disabled { cursor: default; }
-    .explanation { margin-top: 16px; padding: 16px; background: #e8f4fc; border-radius: 12px; border-left: 5px solid #3498db; display: none; }
-    .explanation.show { display: block; }
-    .subjective-input-group { display: flex; gap: 10px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
-    .subjective-input-group input { flex: 1; min-width: 180px; padding: 12px 16px; font-size: 15px; border: 2px solid #ddd; border-radius: 12px; background: #f8f9fa; outline: none; transition: all 0.3s; min-height: 48px; box-sizing: border-box; }
-    .subjective-input-group input:focus { border-color: #f5a623; box-shadow: 0 0 0 3px rgba(245,166,35,0.10); background: #fff; }
-    .subjective-input-group button { padding: 12px 24px; background: #f5a623; color: #fff; border: none; border-radius: 12px; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; white-space: nowrap; min-height: 48px; }
-    .subjective-input-group button:hover { background: #e0941a; transform: scale(1.02); }
-    .nav-buttons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
-    .nav-btn { padding: 10px 18px; font-size: 0.9rem; font-weight: 700; border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s; flex: 1; min-width: 70px; }
-    .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-    .btn-prev { background: #3498db; color: #fff; }
-    .btn-prev:hover:not(:disabled) { background: #2980b9; transform: scale(1.02); }
-    .btn-next { background: #2ecc71; color: #fff; }
-    .btn-next:hover:not(:disabled) { background: #27ae60; transform: scale(1.02); }
-    .btn-skip { background: #f39c12; color: #fff; }
-    .btn-skip:hover:not(:disabled) { background: #e67e22; transform: scale(1.02); }
-    .btn-submit { background: #27ae60; color: #fff; }
-    .btn-submit:hover:not(:disabled) { background: #1e8449; transform: scale(1.02); }
-    .btn-quit { background: #e74c3c; color: #fff; }
-    .btn-quit:hover { background: #c0392b; transform: scale(1.02); }
-    .btn-warning { background: #e67e22; color: #fff; }
-    .btn-warning:hover { background: #d35400; transform: scale(1.02); }
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); z-index: 999; justify-content: center; align-items: center; padding: 20px; }
-    .modal-content { background: #fff; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; border-radius: 24px; padding: 28px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); position: relative; }
-    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
-    .stat-card { text-align: center; padding: 12px; background: #f8f9fa; border-radius: 12px; }
-    .stat-value { font-size: 26px; font-weight: 700; color: #2c3e50; }
-    .result-grid { display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px; margin: 12px 0; max-height: 220px; overflow-y: auto; padding: 4px; }
-    .result-item { text-align: center; padding: 5px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; border: 1px solid #ddd; }
-    .result-item.correct { background: #d4edda; color: #0d4620; }
-    .result-item.incorrect { background: #f8d7da; color: #5a1414; }
-    .result-item.skipped { background: #fff3cd; color: #856404; }
-    .result-item.unanswered { background: #e9ecef; color: #6c757d; }
-    .wrong-list { max-height: 400px; overflow-y: auto; }
-    .wrong-item { background: #fff; border: 2px solid #eee; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
-    .button-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
-    .status-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-left: 6px; }
-    .timer-container { position: fixed; top: 16px; right: 16px; background: rgba(26,26,46,0.92); color: #fff; padding: 10px 16px; border-radius: 12px; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.25); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); min-width: 120px; text-align: center; }
-    .timer-display { font-size: 1.5rem; font-weight: 700; letter-spacing: 2px; font-variant-numeric: tabular-nums; color: #f5a623; }
-    .timer-display.warning { animation: blink 1s infinite; }
-    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
-    .timer-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 2px; opacity: 0.5; margin-top: 2px; }
-    .timer-controls { display: flex; gap: 6px; justify-content: center; margin-top: 4px; }
-    .timer-btn { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 3px 12px; border-radius: 6px; cursor: pointer; font-size: 0.65rem; font-weight: 600; transition: all 0.2s; }
-    .timer-btn:hover { background: rgba(245,166,35,0.25); border-color: #f5a623; }
-    .timer-btn.reset-btn { color: #e74c3c; }
-    .timer-btn.reset-btn:hover { background: rgba(231,76,60,0.20); border-color: #e74c3c; }
-    @media (max-width: 640px) {
-      #mainContainer { padding: 12px; }
-      .cards-container { grid-template-columns: 1fr; gap: 14px; }
-      .card-resume { min-height: auto; }
-      .setup-area { padding: 20px 16px; }
-      .nav-btn { padding: 10px 12px; font-size: 0.8rem; }
-      .result-grid { grid-template-columns: repeat(5, 1fr); }
-      .sat-title { font-size: 1.3rem; }
-      .sat-icon { font-size: 1.2rem; }
-      .sat-sub { font-size: 0.6rem; letter-spacing: 2px; }
-      .timer-container { top: 10px; right: 10px; padding: 8px 12px; min-width: 90px; }
-      .timer-display { font-size: 1.2rem; }
-      .subjective-input-group { flex-direction: column; align-items: stretch; }
-      .subjective-input-group button { width: 100%; }
-      .header { padding: 18px 14px; }
-      .modal-content { padding: 20px; }
-    }
-  </style>
+// ============================================================
+// 0050 - 회원관리 LANG
+// ============================================================
+var LANG = {
+  loginTitle: "🔐 SAT 로그인",
+  loginEmail: "이메일",
+  loginPin: "PIN (4자리 숫자)",
+  loginBtn: "로그인",
+  registerBtn: "회원가입",
+  loginError: "이메일과 PIN을 입력해주세요.",
+  loginFailed: "이메일 또는 PIN이 일치하지 않습니다.",
+  registerSuccess: "회원가입이 완료되었습니다.",
+  registerFailed: "회원가입에 실패했습니다.",
+  alreadyRegistered: "이미 등록된 이메일입니다.",
+  paymentRequired: "💳 결제가 필요합니다.",
+  paymentExpired: "❌ 결제가 만료되었습니다.",
+  paymentPending: "⏳ 관리자 승인 대기 중입니다.",
+  accessDenied: "🚫 접근 권한이 없습니다.",
+  selectSubject: "과목 선택",
+  loadingSubjects: "과목 로딩 중...",
+  noSubjects: "등록된 과목이 없습니다."
+};
 
-  <!-- ============================================================ -->
-  <!-- BLOCK 07: 외부 라이브러리 로드 -->
-  <!-- ============================================================ -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-chtml.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-</head>
-<body>
+// ============================================================
+// 0100 - 기존 LANG (생략 가능 - 필요시 병합)
+// ============================================================
 
-  <!-- ============================================================ -->
-  <!-- BLOCK 01: 스플래시 오버레이 -->
-  <!-- ============================================================ -->
-  <div id="splashOverlay">
-    <div class="icon">📚</div>
-    <div class="title">SAT <span>Quiz</span></div>
-    <div class="subtitle">ADAPTIVE LEARNING PLATFORM</div>
-    <div class="bar-track"><div class="bar-fill" id="splashBar"></div></div>
-    <div class="status-text" id="splashStatus">Loading...</div>
-    <div class="error-msg" id="splashError"></div>
-    <button class="retry-btn" id="splashRetry">🔄 Retry</button>
-  </div>
+// ============================================================
+// 0200 - API URL
+// ============================================================
+var API_URL = "https://script.google.com/macros/s/AKfycbwYnCi7myER0R4djAV7CLW9Y1aTa-mjFSk_y_8vCD_p8vN78Sr5JeUB0WEqJR0_OTuG/exec";
+var ORIGINAL_API_URL = API_URL;
+var MEMBER_API_URL = API_URL;
 
-  <!-- ============================================================ -->
-  <!-- BLOCK 02: 메인 컨테이너 -->
-  <!-- ============================================================ -->
-  <div id="mainContainer">
+// ============================================================
+// 0250 - 회원관리 상수
+// ============================================================
+var SESSION_KEY = 'sat_user_session';
+var CURRENT_USER = null;
+var SELECTED_SUBJECT = 'sat';
+var SUBJECTS_LIST = [];
+var SUBJECTS_LOADED = false;
 
-    <!-- ============================================================ -->
-    <!-- BLOCK 03: 헤더 -->
-    <!-- ============================================================ -->
-    <header class="header">
-      <div class="sat-logo">
-        <span class="sat-icon">📖</span>
-        <span class="sat-title">SAT Quiz</span>
-        <span class="sat-badge">v2.5</span>
-      </div>
-      <div class="sat-sub">Reading &amp; Writing · Math</div>
-    </header>
+// ============================================================
+// 0300 - 기존 전역 변수
+// ============================================================
+var STORAGE_KEY = 'quiz_progress_main';
+var TOTAL_CACHE_KEY = 'quiz_total_questions';
+var QUESTIONS_PER_SET = 120;
+var TOTAL_QUESTIONS = 0;
+var masterQuestions = [];
+var currentQuestions = [];
+var userAnswers = [];
+var currentIndex = 0;
+var correctCount = 0;
+var isReviewMode = false;
+var originalQuestions = [];
+var currentStartNumber = 1;
+var autoSaveInterval = null;
+var chartInstances = {};
+var DOM = {};
 
-    <!-- ============================================================ -->
-    <!-- BLOCK 04: 설정 영역 -->
-    <!-- ============================================================ -->
-    <div id="setupSection" class="setup-area">
-      <div class="cards-container">
-        <div class="card card-new">
-          <div class="card-icon">📖</div>
-          <div class="card-title card-title-new">NEW LESSON</div>
-          <div class="card-sub">Start from a new number</div>
-          <div class="input-wrapper" style="margin-top:6px;">
-            <select id="subjectSelect"><option value="">Loading subjects...</option></select>
-          </div>
-          <div class="input-wrapper" style="margin-top:6px;">
-            <select id="setSelector"><option value="1">Loading sets...</option></select>
-          </div>
-          <div class="input-wrapper">
-            <input type="number" id="startNumber" min="1" placeholder="1-720">
-          </div>
-          <button class="btn-start" id="startQuizBtn">▶ START</button>
-          <div class="card-hint">Select a set or enter a number</div>
+// ============================================================
+// 0400 - Splash 화면 함수
+// ============================================================
+function updateSplash(percent, text) {
+  var bar = document.getElementById('splashBar');
+  var status = document.getElementById('splashStatus');
+  if (bar) bar.style.width = Math.min(100, percent) + '%';
+  if (status) status.textContent = text || 'Loading...';
+}
+function showSplashError(msg) {
+  var errorEl = document.getElementById('splashError');
+  var retryBtn = document.getElementById('splashRetry');
+  if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = '⚠️ ' + msg; }
+  if (retryBtn) retryBtn.style.display = 'inline-block';
+}
+function hideSplash() {
+  var overlay = document.getElementById('splashOverlay');
+  if (overlay) {
+    overlay.style.opacity = '0';
+    setTimeout(function() {
+      overlay.style.display = 'none';
+      document.getElementById('mainContainer').style.display = 'block';
+    }, 500);
+  }
+}
+
+// ============================================================
+// 0450 - 로그인/회원가입 UI
+// ============================================================
+function showLoginScreen() {
+  var loginHTML = `
+    <div id="loginScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);z-index:9999;display:flex;justify-content:center;align-items:center;padding:20px;box-sizing:border-box;">
+      <div style="background:white;padding:40px;border-radius:24px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.5);">
+        <div style="text-align:center;margin-bottom:25px;">
+          <div style="font-size:3rem;">📚</div>
+          <h2 style="color:#1a1a2e;margin:10px 0 4px;">${LANG.loginTitle}</h2>
+          <p style="color:#888;font-size:0.9rem;margin:0;">SAT & PSAT & AP Learning Platform</p>
         </div>
-        <div class="card card-resume" id="resumeCard">
-          <div class="card-icon">⏳</div>
-          <div class="card-title card-title-resume">RESUME</div>
-          <div class="card-sub card-sub-resume">Continue previous session</div>
-          <div id="savedBadgeContainer">
-            <div class="no-session">No saved session <small>Start a new lesson</small></div>
-          </div>
+        <div style="margin-bottom:15px;">
+          <input type="email" id="loginEmail" placeholder="${LANG.loginEmail}" style="width:100%;padding:14px 16px;border:2px solid #ddd;border-radius:12px;font-size:16px;box-sizing:border-box;outline:none;">
         </div>
-      </div>
-      <div class="bottom-hint">Progress is saved automatically</div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- BLOCK 05: 퀴즈 본문 -->
-    <!-- ============================================================ -->
-    <div id="quizMain" class="quiz-main">
-      <div id="reviewBanner" class="review-banner" style="display:none;">
-        <span>Review Mode</span>
-        <button id="exitReviewBtn" class="exit-review-btn">EXIT REVIEW</button>
-      </div>
-      <div class="progress-area" style="display:none;">
-        <span class="progress-count" id="progressText">1 / 1</span>
-        <div class="progress-bar-container">
-          <div class="progress-bar" id="quizProgressBar"></div>
+        <div style="margin-bottom:15px;">
+          <input type="password" id="loginPin" placeholder="${LANG.loginPin}" maxlength="4" style="width:100%;padding:14px 16px;border:2px solid #ddd;border-radius:12px;font-size:16px;box-sizing:border-box;outline:none;" onkeypress="if(event.key==='Enter') handleLogin()">
         </div>
-      </div>
-      <div id="quizContent" style="display:none;">
-        <div id="questionContainer"></div>
-        <div id="explanationBox" class="explanation">
-          <div id="explanationText" style="margin-top:5px;"></div>
+        <button id="loginBtn" onclick="handleLogin()" style="width:100%;padding:16px;background:#f5a623;color:white;border:none;border-radius:12px;font-size:18px;font-weight:700;cursor:pointer;">${LANG.loginBtn}</button>
+        <div id="loginMessage" style="margin-top:12px;text-align:center;font-size:14px;min-height:24px;color:#e74c3c;"></div>
+        <div style="text-align:center;margin-top:16px;font-size:14px;color:#888;">
+          <a href="#" onclick="showRegisterUI()" style="color:#3498db;text-decoration:none;font-weight:600;">${LANG.registerBtn}</a>
+          <span style="margin:0 12px;">|</span>
+          <a href="#" onclick="alert('관리자에게 문의해주세요.')" style="color:#888;text-decoration:none;">PIN 찾기</a>
         </div>
-        <div class="nav-buttons">
-          <button id="prevBtn" class="nav-btn btn-prev">◀ PREV (P)</button>
-          <button id="skipBtn" class="nav-btn btn-skip">SKIP (S)</button>
-          <button id="nextBtn" class="nav-btn btn-next">NEXT (N) ▶</button>
-        </div>
-        <div class="nav-buttons" style="margin-top:10px;">
-          <button id="submitBtn" class="nav-btn btn-submit" style="display:none;">SUBMIT (Enter)</button>
-          <button id="quitBtn" class="nav-btn btn-quit">✕ QUIT</button>
-        </div>
+        <div style="text-align:center;margin-top:10px;font-size:12px;color:#aaa;">체험 계정: student@gmail.com / 1234</div>
       </div>
     </div>
+  `;
+  var existing = document.getElementById('loginScreen');
+  if (existing) existing.remove();
+  var div = document.createElement('div');
+  div.innerHTML = loginHTML;
+  document.body.appendChild(div.firstElementChild);
+}
 
-    <!-- ============================================================ -->
-    <!-- BLOCK 06: 타이머 -->
-    <!-- ============================================================ -->
-    <div class="timer-container" id="timerContainer">
-      <div class="timer-display" id="timerDisplay">00:00:00</div>
-      <div class="timer-label">⏱ TIME</div>
-      <div class="timer-controls">
-        <button class="timer-btn" id="timerPauseBtn">Pause</button>
-        <button class="timer-btn reset-btn" id="timerResetBtn">Reset</button>
-      </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- BLOCK 07: 결과 모달 -->
-    <!-- ============================================================ -->
-    <div id="resultModal" class="modal">
-      <div class="modal-content">
-        <h2 style="text-align:center;">📊 RESULT</h2>
-        <div class="stats">
-          <div class="stat-card"><div>✅ CORRECT</div><div class="stat-value" id="correctCount">0</div></div>
-          <div class="stat-card"><div>🎯 ACCURACY</div><div class="stat-value" id="accuracyRate">0%</div></div>
-        </div>
-        <div><strong>Results (Click to move)</strong></div>
-        <div id="resultGrid" class="result-grid"></div>
-        <div class="button-group">
-          <button id="retryAllBtn" class="nav-btn btn-prev" style="flex:1;">🔄 RETRY</button>
-          <button id="reviewWrongBtn" class="nav-btn btn-warning" style="flex:1;">📝 REVIEW</button>
-          <button id="closeModalBtn" class="nav-btn btn-prev" style="flex:1;">✕ CLOSE</button>
-        </div>
-        <div id="loadNextContainer" style="margin-top:12px;"></div>
-      </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- BLOCK 08: 오답 리뷰 모달 -->
-    <!-- ============================================================ -->
-    <div id="wrongModal" class="modal">
-      <div class="modal-content" style="max-width:750px;">
-        <h2 style="text-align:center;">📝 REVIEW</h2>
-        <p style="text-align:center;margin-bottom:12px;color:#666;">Wrong / Skipped / Unanswered</p>
-        <div id="wrongList" class="wrong-list"></div>
-        <div class="button-group">
-          <button id="retryWrongFromReviewBtn" class="nav-btn btn-warning" style="flex:1;">🔄 RETRY WRONG ONLY</button>
-          <button id="closeWrongBtn" class="nav-btn btn-prev" style="flex:1;">✕ CLOSE</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- BLOCK 09: 진행 복원 모달 -->
-    <!-- ============================================================ -->
-    <div id="progressModal" class="modal" style="display:none;">
-      <div class="modal-content" style="max-width:500px;text-align:center;border-radius:16px;padding:28px;">
-        <div id="progressModalBody" style="text-align:left;margin:10px 0;line-height:1.8;font-size:15px;"></div>
-        <div class="button-group" style="display:flex;justify-content:center;gap:10px;margin-top:20px;">
-          <button id="progressContinueBtn" class="nav-btn" style="flex:1;max-width:160px;padding:12px 20px;font-size:15px;font-weight:700;border:none;border-radius:12px;cursor:pointer;background:#27ae60;color:#fff;">▶ Continue</button>
-          <button id="progressCancelBtn" class="nav-btn" style="flex:1;max-width:160px;padding:12px 20px;font-size:15px;font-weight:700;border:none;border-radius:12px;cursor:pointer;background:#e74c3c;color:#fff;">Start Fresh</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ============================================================ -->
-    <!-- BLOCK 10: SAT Chatbot -->
-    <!-- ============================================================ -->
-    <div style="max-width:700px;margin:20px auto 10px;padding:18px 20px;background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.06);border:2px solid #f5a623;">
-      <h3 style="margin-bottom:12px;color:#1a1a2e;font-size:1.1rem;">🤖 SAT Chatbot</h3>
-      <div style="display:flex;flex-direction:column;gap:8px;">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <input id="chatbotQuestion" placeholder="Ask about this question..." style="flex:1;min-width:160px;padding:12px 16px;border:2px solid #ddd;border-radius:30px;font-size:15px;outline:none;transition:all 0.3s;" onkeypress="if(event.key==='Enter') sendChatbotMessage()">
-          <button onclick="sendChatbotMessage()" style="padding:12px 24px;background:#f5a623;color:#fff;border:none;border-radius:30px;font-weight:700;cursor:pointer;font-size:15px;transition:all 0.3s;white-space:nowrap;" onmouseover="this.style.background='#e0941a'" onmouseout="this.style.background='#f5a623'">Send</button>
-        </div>
-        <div id="chatbotResponse" style="margin-top:6px;padding:14px 16px;background:#f8f9fa;border-radius:14px;min-height:60px;white-space:pre-wrap;border-left:4px solid #f5a623;font-size:14px;line-height:1.6;color:#1a1a2e;">Ask anything about this SAT question.</div>
-      </div>
-    </div>
-
-  </div><!-- /mainContainer -->
-
-  <!-- ============================================================ -->
-  <!-- BLOCK 11: JavaScript 로드 -->
-  <!-- ============================================================ -->
-
-  <!-- main.js (type="module") -->
-  <script type="module" src="https://adopt397-dotcom.github.io/JavaScript/js/main.js?v=28"></script>
-
-  <!-- 임시 initialize 함수 (main.js에 없을 경우 대비) -->
-  <script>
-    function initialize() {
-      console.log('✅ initialize called from HTML (fallback)');
-      var setupSection = document.getElementById('setupSection');
-      var quizMain = document.getElementById('quizMain');
-      if (setupSection) setupSection.style.display = 'block';
-      if (quizMain) quizMain.style.display = 'none';
-      console.log('✅ Fallback initialize complete');
+async function handleLogin() {
+  var email = document.getElementById('loginEmail').value.trim();
+  var pin = document.getElementById('loginPin').value.trim();
+  var msg = document.getElementById('loginMessage');
+  var btn = document.getElementById('loginBtn');
+  if (!email || !pin) {
+    msg.textContent = LANG.loginError;
+    return;
+  }
+  msg.textContent = '⏳ 확인 중...';
+  msg.style.color = '#f5a623';
+  btn.disabled = true;
+  try {
+    var res = await fetch(MEMBER_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'login', email, pin }) });
+    var result = await res.json();
+    if (result.success) {
+      CURRENT_USER = result.data;
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ email, name: result.data.name || email, payment_status: result.data.payment_status, access_subjects: result.data.access_subjects, timestamp: Date.now() }));
+      var loginScreen = document.getElementById('loginScreen');
+      if (loginScreen) loginScreen.remove();
+      await loadSubjects();
+      startApp();
+    } else {
+      msg.textContent = result.message || LANG.loginFailed;
+      msg.style.color = '#e74c3c';
+      btn.disabled = false;
     }
-  </script>
+  } catch (e) {
+    msg.textContent = '⚠️ 서버 연결 오류';
+    msg.style.color = '#e74c3c';
+    btn.disabled = false;
+  }
+}
 
-  <!-- 실행 스크립트 -->
-  <script type="module">
-    let initializeFn;
-    try {
-      const module = await import('https://adopt397-dotcom.github.io/JavaScript/js/main.js?v=28');
-      initializeFn = module.initialize;
-      console.log('✅ main.js에서 initialize 로드 성공');
-    } catch (e) {
-      console.warn('⚠️ main.js에서 initialize 로드 실패, fallback 사용:', e.message);
-      initializeFn = window.initialize;
+function showRegisterUI() {
+  var loginScreen = document.getElementById('loginScreen');
+  if (!loginScreen) return;
+  var content = loginScreen.querySelector('div > div');
+  if (!content) return;
+  content.innerHTML = `
+    <div style="text-align:center;margin-bottom:25px;">
+      <div style="font-size:3rem;">📝</div>
+      <h2 style="color:#1a1a2e;margin:10px 0 4px;">회원가입</h2>
+      <p style="color:#888;font-size:0.9rem;margin:0;">간단히 가입하고 시작하세요</p>
+    </div>
+    <div style="margin-bottom:12px;">
+      <input type="email" id="regEmail" placeholder="이메일" style="width:100%;padding:14px 16px;border:2px solid #ddd;border-radius:12px;font-size:16px;box-sizing:border-box;outline:none;">
+    </div>
+    <div style="margin-bottom:12px;">
+      <input type="text" id="regName" placeholder="이름 (선택)" style="width:100%;padding:14px 16px;border:2px solid #ddd;border-radius:12px;font-size:16px;box-sizing:border-box;outline:none;">
+    </div>
+    <div style="margin-bottom:15px;">
+      <input type="password" id="regPin" placeholder="PIN (4자리 숫자)" maxlength="4" style="width:100%;padding:14px 16px;border:2px solid #ddd;border-radius:12px;font-size:16px;box-sizing:border-box;outline:none;" onkeypress="if(event.key==='Enter') handleRegister()">
+    </div>
+    <button onclick="handleRegister()" style="width:100%;padding:16px;background:#27ae60;color:white;border:none;border-radius:12px;font-size:18px;font-weight:700;cursor:pointer;">가입하기</button>
+    <div id="regMessage" style="margin-top:12px;text-align:center;font-size:14px;min-height:24px;color:#e74c3c;"></div>
+    <div style="text-align:center;margin-top:16px;font-size:14px;">
+      <a href="#" onclick="showLoginScreen()" style="color:#3498db;text-decoration:none;font-weight:600;">← 로그인으로 돌아가기</a>
+    </div>
+  `;
+}
+
+async function handleRegister() {
+  var email = document.getElementById('regEmail').value.trim();
+  var name = document.getElementById('regName').value.trim();
+  var pin = document.getElementById('regPin').value.trim();
+  var msg = document.getElementById('regMessage');
+  var btn = document.querySelector('#loginScreen button');
+  if (!email || !pin) { msg.textContent = '이메일과 PIN은 필수입니다.'; return; }
+  if (pin.length !== 4 || isNaN(pin)) { msg.textContent = 'PIN은 4자리 숫자여야 합니다.'; return; }
+  msg.textContent = '⏳ 처리 중...';
+  if (btn) btn.disabled = true;
+  try {
+    var res = await fetch(MEMBER_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'register', email, pin, name: name || email }) });
+    var result = await res.json();
+    if (result.success) {
+      msg.textContent = '✅ ' + result.message;
+      msg.style.color = '#27ae60';
+      setTimeout(showLoginScreen, 1500);
+    } else {
+      msg.textContent = result.message || LANG.registerFailed;
+      msg.style.color = '#e74c3c';
+      if (btn) btn.disabled = false;
     }
+  } catch (e) {
+    msg.textContent = '⚠️ 서버 오류';
+    if (btn) btn.disabled = false;
+  }
+}
 
-    document.addEventListener('DOMContentLoaded', function() {
-      window.sendChatbotMessage = async function() {
-        const questionInput = document.getElementById('chatbotQuestion');
-        const responseDiv = document.getElementById('chatbotResponse');
-        const question = questionInput.value.trim();
-        if (!question) {
-          responseDiv.innerHTML = 'Please enter a question.';
-          return;
-        }
-        let problemNumber = '1';
-        const qNumElement = document.querySelector('.q-num');
-        if (qNumElement) {
-          const match = qNumElement.textContent.match(/\(Original #(\d+)\)/);
-          if (match) problemNumber = match[1];
-        }
-        responseDiv.innerHTML = '⏳ Processing...';
-        questionInput.disabled = true;
-        try {
-          const res = await fetch('https://sat-bot-07020143.vercel.app/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ problemNumber: problemNumber, question: question })
-          });
-          const data = await res.json();
-          if (res.ok) {
-            responseDiv.innerHTML = '🤖 ' + (data.message || data.response || 'No response.');
-          } else {
-            responseDiv.innerHTML = '❌ Error: ' + (data.error || 'Unknown error');
-          }
-        } catch (e) {
-          responseDiv.innerHTML = '❌ Network error: Could not reach server.';
-          console.error('Chatbot error:', e);
-        } finally {
-          questionInput.disabled = false;
-          questionInput.value = '';
-          questionInput.focus();
-        }
-      };
+// ============================================================
+// 0500 - 유틸리티 함수
+// ============================================================
+function escapeHtml(str) { if (!str) return ''; return String(str).replace(/[&<>]/g, function(m) { return m === '&' ? '&amp;' : m === '<' ? '&lt;' : '&gt;'; }); }
+function getAnswerLetter(num) { var n = parseInt(num); if (isNaN(n)) return num; var letters = {1:'A',2:'B',3:'C',4:'D'}; return letters[n] || num; }
+function getValidChoiceKeys(choices) { return Object.keys(choices).filter(function(key) { var v = choices[key]; if (typeof v === 'string') return v && v.trim() !== ""; return v !== null && v !== undefined && v !== ""; }).sort(function(a,b) { return Number(a) - Number(b); }); }
+function hasRealChoices(q) { if (!q || !q.choices) return false; return Object.values(q.choices).some(function(v) { if (!v || typeof v !== 'string') return false; var t = v.trim(); return t !== "" && t.toLowerCase() !== 'no options' && t !== 'No options'; }); }
+function isSubjectiveQuestion(q) { return !hasRealChoices(q); }
+function randomizeChoicesOnly(q) {
+  if (!q || !q.choices || !hasRealChoices(q)) return q;
+  try {
+    var entries = Object.entries(q.choices).filter(function(item) { var v = item[1]; if (typeof v === 'string') return v && v.trim() !== ""; return v !== null && v !== undefined && v !== ""; }).map(function(item) { return { k: parseInt(item[0]), v: String(item[1]) }; });
+    var shuffled = entries.slice();
+    for (var i = shuffled.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var temp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = temp; }
+    var newChoices = {}; shuffled.forEach(function(c, idx) { newChoices[idx + 1] = c.v; });
+    var originalAns = parseInt(q.answer);
+    var correctIdx = shuffled.findIndex(function(c) { return c.k == originalAns; });
+    return { ...q, choices: newChoices, answer: (correctIdx + 1).toString() };
+  } catch(e) { return q; }
+}
 
-      const startBtn = document.getElementById('startQuizBtn');
-      if (startBtn) {
-        startBtn.addEventListener('click', function(e) {
-          if (this.disabled) return;
-          this.disabled = true;
-          this.textContent = '⏳ Loading...';
-          this.style.opacity = '0.6';
-          this.style.cursor = 'wait';
-          setTimeout(() => {
-            this.disabled = false;
-            this.textContent = '▶ START';
-            this.style.opacity = '1';
-            this.style.cursor = 'pointer';
-          }, 5000);
-        });
-      }
+// ============================================================
+// 0550 - 회원관리 유틸리티
+// ============================================================
+function checkAutoLogin() {
+  var session = localStorage.getItem(SESSION_KEY);
+  if (!session) return false;
+  try {
+    var data = JSON.parse(session);
+    if (Date.now() - data.timestamp < 7 * 24 * 60 * 60 * 1000) {
+      CURRENT_USER = { email: data.email, name: data.name || data.email, payment_status: data.payment_status, access_subjects: data.access_subjects };
+      return true;
+    } else { localStorage.removeItem(SESSION_KEY); }
+  } catch(e) { localStorage.removeItem(SESSION_KEY); }
+  return false;
+}
 
-      if (typeof initializeFn === 'function') {
-        initializeFn();
-      } else {
-        console.error('❌ initialize 함수를 찾을 수 없습니다.');
-        const setup = document.getElementById('setupSection');
-        if (setup) setup.style.display = 'block';
-      }
+async function loadSubjects() {
+  if (SUBJECTS_LOADED) return SUBJECTS_LIST;
+  try {
+    var res = await fetch(MEMBER_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'subjects' }) });
+    var result = await res.json();
+    if (result.success && result.data) { SUBJECTS_LIST = result.data; SUBJECTS_LOADED = true; return SUBJECTS_LIST; }
+    else return [];
+  } catch(e) { return []; }
+}
+
+function getAccessibleSubjects() {
+  if (!CURRENT_USER || !CURRENT_USER.access_subjects) return SUBJECTS_LIST;
+  try { var accessList = JSON.parse(CURRENT_USER.access_subjects); return SUBJECTS_LIST.filter(function(s) { return accessList.indexOf(s.subject) !== -1; }); } catch(e) { return SUBJECTS_LIST; }
+}
+
+function logout() { if (confirm('로그아웃 하시겠습니까?')) { localStorage.removeItem(SESSION_KEY); CURRENT_USER = null; window.location.reload(); } }
+
+// ============================================================
+// 0600 - 자동저장
+// ============================================================
+function startAutoSave() { if (autoSaveInterval) clearInterval(autoSaveInterval); autoSaveInterval = setInterval(saveProgress, 5000); }
+
+// ============================================================
+// 0700 - saveProgress / loadProgress / clearProgress
+// ============================================================
+function saveProgress() {
+  try {
+    var data = { currentQuestions, userAnswers, currentIndex, correctCount, currentStartNumber, isReviewMode, masterQuestions, originalQuestions, timestamp: Date.now() };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch(e) {}
+}
+function loadProgress() {
+  try { var raw = localStorage.getItem(STORAGE_KEY); if (!raw) return null; var data = JSON.parse(raw); if (data && data.currentQuestions && data.currentQuestions.length > 0) return data; return null; } catch(e) { return null; }
+}
+function clearProgress() { localStorage.removeItem(STORAGE_KEY); }
+
+// ============================================================
+// 0800 - 퀴즈 네비게이션
+// ============================================================
+function goNext() { if (currentIndex < currentQuestions.length - 1) { currentIndex++; renderCurrentQuestion(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+function goPrev() { if (currentIndex > 0) { currentIndex--; renderCurrentQuestion(); window.scrollTo({ top: 0, behavior: 'smooth' }); } }
+function skipQuestion() {
+  if (userAnswers[currentIndex] === null || userAnswers[currentIndex] === undefined) { userAnswers[currentIndex] = -1; saveProgress(); }
+  if (currentIndex < currentQuestions.length - 1) { currentIndex++; renderCurrentQuestion(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+}
+function submitSubjective() {
+  var input = document.getElementById('subjectiveInput');
+  if (!input) return;
+  var userAnswer = input.value.trim();
+  if (!userAnswer) { alert('답을 입력해주세요.'); return; }
+  var q = currentQuestions[currentIndex];
+  var correctAnswer = q.A && q.A !== '' ? String(q.A).trim() : (q.answer && q.answer !== '' && q.answer !== '0' ? String(q.answer).trim() : userAnswer);
+  var isCorrect = (userAnswer === correctAnswer) || (parseFloat(userAnswer) === parseFloat(correctAnswer));
+  userAnswers[currentIndex] = userAnswer;
+  if (isCorrect) correctCount++;
+  saveProgress();
+  renderCurrentQuestion();
+}
+
+// ============================================================
+// 0900 - 결과 및 리뷰
+// ============================================================
+function getWrongSkippedUnansweredIndices() {
+  var result = [];
+  for (var i = 0; i < currentQuestions.length; i++) {
+    var q = currentQuestions[i]; var ans = userAnswers[i]; var isUnanswered = (ans === null || ans === undefined); var isSkipped = (ans === -1);
+    var isSubjective = isSubjectiveQuestion(q);
+    var isIncorrect = false;
+    if (!isUnanswered && !isSkipped) {
+      if (isSubjective) { var correctAns = q.A || q.answer || ''; isIncorrect = !(String(ans).trim() === String(correctAns).trim()); }
+      else { isIncorrect = (ans !== parseInt(q.answer)); }
+    }
+    if (isUnanswered || isSkipped || isIncorrect) result.push(i);
+  }
+  return result;
+}
+
+function showResults() {
+  saveProgress();
+  var answeredCount = userAnswers.filter(function(a) { return a !== null && a !== undefined && a !== -1; }).length;
+  var accuracy = answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0;
+  DOM.correctCountSpan.innerHTML = correctCount + ' / ' + answeredCount;
+  DOM.accuracyRateSpan.innerHTML = accuracy + '%';
+  var gridHtml = '<div style="display:grid;grid-template-columns:repeat(10,1fr);gap:6px;">';
+  for (var i = 0; i < currentQuestions.length; i++) {
+    var ans = userAnswers[i];
+    var isCorrect = (ans !== null && ans !== undefined && ans !== -1 && ans === parseInt(currentQuestions[i].answer));
+    var isSkipped = (ans === -1);
+    var isUnanswered = (ans === null || ans === undefined);
+    var statusClass = isCorrect ? 'correct' : isSkipped ? 'skipped' : isUnanswered ? 'unanswered' : 'incorrect';
+    gridHtml += '<div class="result-item ' + statusClass + '" data-qidx="' + i + '">' + (i + 1) + '</div>';
+  }
+  gridHtml += '</div>';
+  DOM.resultGrid.innerHTML = gridHtml;
+  DOM.resultGrid.querySelectorAll('.result-item[data-qidx]').forEach(function(el) {
+    el.addEventListener('click', function() { var idx = parseInt(el.getAttribute('data-qidx')); currentIndex = idx; DOM.resultModal.style.display = 'none'; renderCurrentQuestion(); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+  });
+  DOM.resultModal.style.display = 'flex';
+}
+
+function showWrongAnswersList() {
+  var wrongItems = [];
+  for (var i = 0; i < currentQuestions.length; i++) {
+    var q = currentQuestions[i]; var ans = userAnswers[i]; var isSkipped = (ans === -1); var isUnanswered = (ans === null || ans === undefined);
+    var isSubjective = isSubjectiveQuestion(q);
+    var isIncorrect = false;
+    if (!isSkipped && !isUnanswered) {
+      if (isSubjective) { var correctAns = q.A || q.answer || ''; isIncorrect = !(String(ans).trim() === String(correctAns).trim()); }
+      else { isIncorrect = (ans !== parseInt(q.answer)); }
+    }
+    if (isSkipped || isIncorrect || isUnanswered) {
+      var actualNumber = q.originalNumber || (currentStartNumber + i);
+      wrongItems.push({ idx: i, actualNumber: actualNumber, q: q, ans: ans, isSkipped: isSkipped, isUnanswered: isUnanswered, isSubjective: isSubjective });
+    }
+  }
+  if (wrongItems.length === 0) { alert('🎉 모든 문제를 맞추셨습니다!'); return; }
+  var html = '<p style="margin-bottom:15px;padding:10px;background:#f0f0f0;border-radius:8px;text-align:center;">리뷰 문제: <strong>' + wrongItems.length + '</strong>개</p>';
+  wrongItems.forEach(function(item) {
+    var statusText = item.isSkipped ? 'SKIPPED' : (item.isUnanswered ? 'UNANSWERED' : 'WRONG');
+    var statusColor = item.isSkipped ? '#f39c12' : (item.isUnanswered ? '#6c757d' : '#e74c3c');
+    var userAnswerDisplay = (item.ans === null || item.ans === undefined || item.ans === -1) ? '---' : String(item.ans);
+    var correctAnswerDisplay = (item.isSubjective) ? (item.q.A || item.q.answer || '---') : getAnswerLetter(item.q.answer);
+    html += '<div class="wrong-item" style="border-left:5px solid ' + statusColor + ';padding:16px;margin-bottom:14px;background:#fff;border-radius:12px;border:2px solid #eee;">' +
+      '<div style="font-weight:bold;margin-bottom:10px;">Question ' + (item.idx + 1) + ' (Original #' + item.actualNumber + ') <span style="display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:700;margin-left:8px;background:' + statusColor + ';color:#fff;">' + statusText + '</span></div>' +
+      '<div style="margin-bottom:12px;"><strong>' + escapeHtml(item.q.question) + '</strong></div>' +
+      '<div style="margin-top:12px;padding:10px;background:#f8f9fa;border-radius:8px;"><strong>내 답:</strong> ' + escapeHtml(String(userAnswerDisplay)) + '<br><strong>정답:</strong> ' + escapeHtml(String(correctAnswerDisplay)) + '</div>' +
+      '<div style="margin-top:12px;padding:10px;background:#e8f4fc;border-radius:8px;"><strong>해설</strong><br>' + escapeHtml(item.q.explanation || '해설이 없습니다.') + '</div></div>';
+  });
+  DOM.wrongListDiv.innerHTML = html;
+  DOM.wrongModal.style.display = 'flex';
+}
+
+function startWrongOnlyReview() {
+  var indices = getWrongSkippedUnansweredIndices();
+  if (indices.length === 0) { alert('🎉 모든 문제를 맞추셨습니다!'); return; }
+  var reviewQuestions = indices.map(function(idx) { return currentQuestions[idx]; });
+  currentQuestions = reviewQuestions.slice();
+  userAnswers = new Array(currentQuestions.length).fill(null);
+  correctCount = 0;
+  currentIndex = 0;
+  isReviewMode = true;
+  DOM.reviewBanner.style.display = 'block';
+  DOM.reviewBanner.innerHTML = '<span>Review Mode: ' + currentQuestions.length + ' questions</span><button id="exitReviewBtn" class="exit-review-btn">EXIT REVIEW</button>';
+  document.getElementById('exitReviewBtn').addEventListener('click', function() { clearProgress(); window.location.reload(); });
+  DOM.wrongModal.style.display = 'none';
+  DOM.resultModal.style.display = 'none';
+  renderCurrentQuestion();
+  saveProgress();
+}
+
+// ============================================================
+// 1000 - 타이머
+// ============================================================
+var timerSeconds = 134 * 60;
+var timerInterval = null;
+var timerRunning = false;
+var timerPaused = false;
+
+function formatTimer(seconds) {
+  var hrs = Math.floor(seconds / 3600);
+  var mins = Math.floor((seconds % 3600) / 60);
+  var secs = seconds % 60;
+  return String(hrs).padStart(2, '0') + ':' + String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+}
+
+function updateTimerDisplay() {
+  var display = document.getElementById('timerDisplay');
+  if (display) {
+    display.textContent = formatTimer(timerSeconds);
+    if (timerSeconds < 300) display.classList.add('warning');
+    else display.classList.remove('warning');
+  }
+}
+
+function startTimer() {
+  if (timerInterval) return;
+  timerRunning = true;
+  timerPaused = false;
+  var btn = document.getElementById('timerPauseBtn');
+  if (btn) btn.textContent = 'Pause';
+  timerInterval = setInterval(function() {
+    if (timerSeconds > 0) { timerSeconds--; updateTimerDisplay(); if (timerSeconds === 0) { clearInterval(timerInterval); timerInterval = null; timerRunning = false; alert('⏰ 시간이 종료되었습니다!'); } }
+  }, 1000);
+}
+
+function pauseTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; timerRunning = false; timerPaused = true; var btn = document.getElementById('timerPauseBtn'); if (btn) btn.textContent = 'Resume'; }
+  else if (timerPaused) { startTimer(); }
+}
+
+function resetTimer() {
+  if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+  timerSeconds = 134 * 60;
+  timerRunning = false;
+  timerPaused = false;
+  var btn = document.getElementById('timerPauseBtn');
+  if (btn) btn.textContent = 'Pause';
+  updateTimerDisplay();
+}
+
+function initTimer() {
+  updateTimerDisplay();
+  var pauseBtn = document.getElementById('timerPauseBtn');
+  var resetBtn = document.getElementById('timerResetBtn');
+  if (pauseBtn) pauseBtn.addEventListener('click', pauseTimer);
+  if (resetBtn) resetBtn.addEventListener('click', function() { if (confirm('타이머를 초기화하시겠습니까?')) resetTimer(); });
+}
+
+// ============================================================
+// 1100 - 렌더링 함수
+// ============================================================
+function renderCurrentQuestion() {
+  if (!currentQuestions.length || currentIndex >= currentQuestions.length) {
+    DOM.questionContainer.innerHTML = '<div style="padding:40px;text-align:center;color:red;">❌ 문제를 불러올 수 없습니다.</div>';
+    return;
+  }
+  var q = currentQuestions[currentIndex];
+  if (!q) {
+    DOM.questionContainer.innerHTML = '<div style="padding:40px;text-align:center;color:red;">❌ 유효하지 않은 문제입니다.</div>';
+    return;
+  }
+  var answered = userAnswers[currentIndex];
+  updateProgressDisplay();
+  var actualNumber = q.originalNumber || (currentStartNumber + currentIndex);
+  var headerText = 'Question ' + (currentIndex + 1) + ' / ' + currentQuestions.length + ' (Original #' + actualNumber + ')';
+  if (isReviewMode) headerText = 'Review Question ' + (currentIndex + 1) + ' / ' + currentQuestions.length + ' (Original #' + actualNumber + ')';
+  var hasChoices = hasRealChoices(q);
+  var isSubjective = !hasChoices;
+  var passageHtml = '';
+  var displayPassage = q.passage || '';
+  if (displayPassage && displayPassage.trim() && displayPassage.trim() !== 'No passage.') {
+    passageHtml = '<div style="background:#f8f9fa;padding:15px;border-radius:8px;margin:10px 0;border:1px solid #dee2e6;"><div style="white-space:pre-wrap;font-size:15px;line-height:1.7;">' + escapeHtml(displayPassage) + '</div></div>';
+  }
+  if (isSubjective) {
+    renderSubjectiveQuestion(q, answered, headerText, passageHtml);
+    return;
+  }
+  var validKeys = getValidChoiceKeys(q.choices);
+  var originalAnswerKey = String(q.answer);
+  var originalAnswerText = q.choices[originalAnswerKey] || '';
+  var actualAnswerKey = null;
+  for (var i = 0; i < validKeys.length; i++) { var key = validKeys[i]; if (q.choices[key] == originalAnswerText) { actualAnswerKey = key; break; } }
+  var displayAnswer = actualAnswerKey != null ? validKeys.indexOf(actualAnswerKey) + 1 : parseInt(originalAnswerKey);
+  var html = '<div class="question-card"><div class="q-num">' + headerText + '</div>' + passageHtml + renderGraphic(q.graphic) + '<div class="question-text math-content">' + (q.question || 'No question text') + '</div><div class="choices">';
+  for (var i = 0; i < validKeys.length; i++) {
+    var key = validKeys[i];
+    var choiceText = q.choices[key] || '';
+    var letter = String.fromCharCode(64 + parseInt(key));
+    var isAnswered = (answered !== null && answered !== undefined && answered !== -1);
+    var isCorrect = isAnswered && (parseInt(answered) === parseInt(displayAnswer)) && (parseInt(key) === parseInt(answered));
+    var isWrong = isAnswered && (parseInt(answered) !== parseInt(displayAnswer)) && (parseInt(key) === parseInt(answered));
+    var isDisabled = isAnswered ? 'disabled' : '';
+    var extraClass = isCorrect ? 'correct' : (isWrong ? 'incorrect' : '');
+    html += '<div class="choice ' + extraClass + ' ' + isDisabled + '" data-choice="' + key + '">' +
+      '<div class="choice-letter">' + letter + '</div>' +
+      '<div style="flex:1;">' + choiceText + '</div>' +
+      (isCorrect ? ' ✅' : '') + (isWrong ? ' ❌' : '') +
+      '</div>';
+  }
+  html += '</div></div>';
+  DOM.questionContainer.innerHTML = html;
+  if (window.MathJax && MathJax.typesetPromise) { MathJax.typesetPromise([DOM.questionContainer]).catch(console.warn); }
+  var choiceEls = DOM.questionContainer.querySelectorAll('.choice:not(.disabled)');
+  choiceEls.forEach(function(el) {
+    el.addEventListener('click', function() {
+      var choice = parseInt(el.getAttribute('data-choice'));
+      if (isNaN(choice)) return;
+      userAnswers[currentIndex] = choice;
+      if (choice === displayAnswer) correctCount++;
+      saveProgress();
+      renderCurrentQuestion();
+      showExplanation();
     });
-  </script>
+  });
+  if (answered !== null && answered !== undefined && answered !== -1) showExplanation();
+  else DOM.explanationBox.classList.remove('show');
+  var isLastQuestion = (currentIndex >= currentQuestions.length - 1);
+  if (isLastQuestion) {
+    DOM.nextBtn.style.display = 'none';
+    DOM.submitBtn.style.display = 'inline-block';
+    DOM.submitBtn.innerHTML = 'SUBMIT (Enter)';
+    var isAnswered = (answered !== null && answered !== undefined && answered !== -1);
+    DOM.submitBtn.disabled = !isAnswered;
+    DOM.submitBtn.style.background = isAnswered ? '#27ae60' : '#95a5a6';
+  } else {
+    DOM.nextBtn.style.display = 'inline-block';
+    DOM.nextBtn.innerHTML = 'NEXT (N) ▶';
+    DOM.submitBtn.style.display = 'none';
+  }
+  DOM.prevBtn.disabled = (currentIndex === 0);
+}
 
-</body>
-</html>
+function renderSubjectiveQuestion(q, answered, headerText, passageHtml) {
+  var isAnswered = (answered !== null && answered !== undefined && answered !== -1);
+  if (!isAnswered) { DOM.explanationBox.classList.remove('show'); DOM.explanationText.innerHTML = ''; }
+  var correctAnswerText = q.A && q.A !== '' ? String(q.A).trim() : (q.answer && q.answer !== '' && q.answer !== '0' ? String(q.answer).trim() : '정답 정보 없음');
+  var html = '<div class="question-card"><div class="q-num">' + headerText + '</div>' + passageHtml + renderGraphic(q.graphic) + '<div class="question-text math-content">' + (q.question || 'No question text') + '</div>';
+  if (isAnswered) {
+    var userAns = String(answered).trim();
+    var isCorrect = (userAns === correctAnswerText) || (parseFloat(userAns) === parseFloat(correctAnswerText));
+    var statusColor = isCorrect ? '#27ae60' : '#e74c3c';
+    html += '<div style="margin-top:15px;padding:15px;background:#f8f9fa;border-radius:8px;border-left:4px solid #666;"><div style="font-size:14px;color:#666;">내 답: <strong>' + escapeHtml(userAns) + '</strong></div></div>' +
+      '<div style="margin-top:10px;padding:12px;background:' + statusColor + ';color:#fff;border-radius:8px;font-weight:700;">정답: ' + escapeHtml(correctAnswerText) + '</div>' +
+      '<div style="margin-top:12px;padding:15px;background:#e8f4fc;border-radius:8px;"><strong>해설</strong><p style="margin-top:8px;">' + escapeHtml(q.explanation || '해설이 없습니다.') + '</p></div>';
+  } else {
+    html += '<div class="subjective-input-group"><input type="text" id="subjectiveInput" placeholder="답을 입력하세요" onkeypress="if(event.key===\'Enter\') submitSubjective()"><button onclick="submitSubjective()">제출</button></div>';
+  }
+  html += '</div>';
+  DOM.questionContainer.innerHTML = html;
+  if (window.MathJax && MathJax.typesetPromise) { MathJax.typesetPromise([DOM.questionContainer]).catch(console.warn); }
+  var isLastQuestion = (currentIndex >= currentQuestions.length - 1);
+  if (isLastQuestion) {
+    DOM.nextBtn.style.display = 'none';
+    DOM.submitBtn.style.display = 'inline-block';
+    DOM.submitBtn.innerHTML = 'SUBMIT (Enter)';
+    var isAnswered2 = (userAnswers[currentIndex] !== null && userAnswers[currentIndex] !== undefined && userAnswers[currentIndex] !== -1);
+    DOM.submitBtn.disabled = isAnswered2;
+    DOM.submitBtn.style.background = isAnswered2 ? '#27ae60' : '#95a5a6';
+  } else {
+    DOM.nextBtn.style.display = 'inline-block';
+    DOM.nextBtn.innerHTML = 'NEXT (N) ▶';
+    DOM.submitBtn.style.display = 'none';
+  }
+  DOM.prevBtn.disabled = (currentIndex === 0);
+}
+
+function showExplanation() {
+  var q = currentQuestions[currentIndex];
+  var ans = userAnswers[currentIndex];
+  if (!q || ans == null || ans == undefined || ans == -1) { DOM.explanationBox.classList.remove('show'); return; }
+  var hasChoices = hasRealChoices(q);
+  if (!hasChoices) {
+    var correctAns = q.A && q.A !== '' ? String(q.A).trim() : (q.answer && q.answer !== '' && q.answer !== '0' ? String(q.answer).trim() : '정답 정보 없음');
+    var userAns = String(ans).trim();
+    var isCorrect = (userAns === correctAns) || (parseFloat(userAns) === parseFloat(correctAns));
+    var statusColor = isCorrect ? '#27ae60' : '#e74c3c';
+    DOM.explanationText.innerHTML = '<div style="background:' + statusColor + ';color:white;padding:8px 16px;border-radius:6px;display:inline-block;font-weight:700;margin-bottom:15px;">정답: ' + escapeHtml(correctAns) + '</div><div style="margin-top:8px;font-size:14px;color:#555;">내 답: <strong>' + escapeHtml(userAns) + '</strong></div><p style="margin-top:12px;" class="math-content">' + escapeHtml(q.explanation || '해설이 없습니다.') + '</p>';
+    DOM.explanationBox.classList.add('show');
+    if (window.MathJax && MathJax.typesetPromise) { MathJax.typesetPromise([DOM.explanationText]).catch(console.warn); }
+    return;
+  }
+  var validKeys = getValidChoiceKeys(q.choices);
+  var originalAnswerKey = String(q.answer);
+  var originalAnswerText = q.choices[originalAnswerKey] || '';
+  var actualAnswerKey = null;
+  for (var i = 0; i < validKeys.length; i++) { var key = validKeys[i]; if (q.choices[key] === originalAnswerText) { actualAnswerKey = key; break; } }
+  var displayAnswerIndex = actualAnswerKey !== null ? validKeys.indexOf(actualAnswerKey) + 1 : parseInt(originalAnswerKey);
+  var userAnswerLetter = getAnswerLetter(ans);
+  var correctAnswerLetter = getAnswerLetter(displayAnswerIndex);
+  var isCorrect = (ans === displayAnswerIndex);
+  var statusColor = isCorrect ? '#27ae60' : '#e74c3c';
+  DOM.explanationText.innerHTML = '<div style="background:' + statusColor + ';color:white;padding:8px 16px;border-radius:6px;display:inline-block;font-weight:700;margin-bottom:15px;">정답: ' + correctAnswerLetter + '</div><div style="margin-top:8px;font-size:14px;color:#555;">내 답: <strong>' + userAnswerLetter + '</strong></div><p style="margin-top:12px;" class="math-content">' + escapeHtml(q.explanation || '해설이 없습니다.') + '</p>';
+  DOM.explanationBox.classList.add('show');
+  if (window.MathJax && MathJax.typesetPromise) { MathJax.typesetPromise([DOM.explanationText]).catch(console.warn); }
+}
+
+// ============================================================
+// 1200 - Keyboard Events
+// ============================================================
+function attachKeyboardEvents() {
+  document.addEventListener('keydown', function(event) {
+    var key = event.key;
+    if (key === 'p' || key === 'P') { event.preventDefault(); if (currentIndex > 0) goPrev(); return; }
+    if (key === 'n' || key === 'N') { event.preventDefault(); if (currentIndex < currentQuestions.length - 1) goNext(); return; }
+    if (key === 's' || key === 'S' || key === 'A') { event.preventDefault(); skipQuestion(); return; }
+    if (key === 'Enter' && currentIndex >= currentQuestions.length - 1 && DOM.submitBtn && DOM.submitBtn.style.display !== 'none') {
+      var isAnswered = (userAnswers[currentIndex] !== null && userAnswers[currentIndex] !== undefined && userAnswers[currentIndex] !== -1);
+      if (isAnswered) { event.preventDefault(); showResults(); }
+      return;
+    }
+    if (key === 'ArrowLeft') { event.preventDefault(); if (currentIndex > 0) goPrev(); return; }
+    if (key === 'ArrowRight') { event.preventDefault(); if (currentIndex < currentQuestions.length - 1) goNext(); return; }
+  });
+}
+
+// ============================================================
+// 1300 - attachEvents & resume
+// ============================================================
+function attachEvents() {
+  var continueBtn = document.getElementById('progressContinueBtn');
+  if (continueBtn) {
+    continueBtn.addEventListener('click', function() {
+      var modal = document.getElementById('progressModal');
+      var savedData = modal.getAttribute('data-saved');
+      if (savedData) { var saved = JSON.parse(savedData); modal.style.display = 'none'; resumeProgress(saved); }
+    });
+  }
+  var cancelBtn = document.getElementById('progressCancelBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function() {
+      var modal = document.getElementById('progressModal');
+      modal.style.display = 'none';
+      clearProgress();
+      var startNum = parseInt(document.getElementById('startNumber').value) || 1;
+      startQuizWithNumber(startNum);
+    });
+  }
+  DOM.startQuizBtn.addEventListener('click', function() {
+    var startNum = parseInt(DOM.startNumberInput.value);
+    if (isNaN(startNum) || DOM.startNumberInput.value === "") startNum = 1;
+    if (startNum < 1) startNum = 1;
+    if (startNum > TOTAL_QUESTIONS) startNum = TOTAL_QUESTIONS;
+    clearProgress();
+    startQuizWithNumber(startNum);
+  });
+  DOM.startNumberInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); DOM.startQuizBtn.click(); } });
+  DOM.prevBtn.addEventListener('click', goPrev);
+  DOM.nextBtn.addEventListener('click', goNext);
+  DOM.skipBtn.addEventListener('click', skipQuestion);
+  DOM.submitBtn.addEventListener('click', showResults);
+  DOM.quitBtn.addEventListener('click', function() { saveProgress(); if (confirm('메인으로 돌아갑니다. 진행 상황은 저장됩니다.')) window.location.reload(); });
+  DOM.retryAllBtn.addEventListener('click', function() { clearProgress(); DOM.resultModal.style.display = 'none'; startQuizWithNumber(currentStartNumber); });
+  DOM.reviewWrongBtn.addEventListener('click', function() { DOM.resultModal.style.display = 'none'; showWrongAnswersList(); });
+  DOM.closeModalBtn.addEventListener('click', function() { DOM.resultModal.style.display = 'none'; });
+  DOM.closeWrongBtn.addEventListener('click', function() { DOM.wrongModal.style.display = 'none'; });
+  DOM.retryWrongFromReviewBtn.addEventListener('click', startWrongOnlyReview);
+  document.getElementById('splashRetry').addEventListener('click', function() { document.getElementById('splashError').style.display = 'none'; document.getElementById('splashRetry').style.display = 'none'; document.getElementById('splashStatus').textContent = 'Retrying...'; initialize(); });
+  attachKeyboardEvents();
+}
+
+function showProgressModal(saved) {
+  var answered = saved.userAnswers.filter(function(a) { return a !== null && a !== -1; }).length;
+  var total = saved.currentQuestions.length;
+  var progress = saved.currentIndex + 1;
+  var body = document.getElementById('progressModalBody');
+  body.innerHTML = '<div style="padding:10px 0;"><p style="font-size:22px;font-weight:700;color:#2c3e50;text-align:center;margin-bottom:10px;">📊 Resume Session</p><div style="background:#f8f9fa;border-radius:12px;padding:16px 20px;margin:15px 0;"><div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Progress</span><strong>' + progress + ' / ' + total + '</strong></div><div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Answered</span><strong>' + answered + ' / ' + total + '</strong></div><div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Correct</span><strong>' + (saved.correctCount || 0) + '</strong></div></div><p style="font-size:13px;color:#999;text-align:center;margin-top:10px;">Click <strong>"Continue"</strong> to resume. Click <strong>"Start Fresh"</strong> to begin again.</p></div>';
+  document.getElementById('progressModal').setAttribute('data-saved', JSON.stringify(saved));
+  document.getElementById('progressModal').style.display = 'flex';
+}
+
+function resumeProgress(saved) {
+  currentQuestions = saved.currentQuestions;
+  userAnswers = saved.userAnswers;
+  currentIndex = saved.currentIndex || 0;
+  correctCount = saved.correctCount || 0;
+  currentStartNumber = saved.currentStartNumber || 1;
+  isReviewMode = saved.isReviewMode || false;
+  if (saved.masterQuestions) masterQuestions = saved.masterQuestions;
+  if (saved.originalQuestions) originalQuestions = saved.originalQuestions;
+  startAutoSave();
+  DOM.setupSection.style.display = 'none';
+  DOM.quizMain.style.display = 'block';
+  if (DOM.quizContent) DOM.quizContent.style.display = 'block';
+  if (DOM.progressArea) DOM.progressArea.style.display = 'flex';
+  if (isReviewMode) {
+    DOM.reviewBanner.style.display = 'block';
+    DOM.reviewBanner.innerHTML = '<span>Review Mode: ' + currentQuestions.length + ' questions</span><button id="exitReviewBtn" class="exit-review-btn">EXIT REVIEW</button>';
+    document.getElementById('exitReviewBtn').addEventListener('click', function() { clearProgress(); window.location.reload(); });
+  }
+  renderCurrentQuestion();
+}
+
+// ============================================================
+// 1400 - initialize
+// ============================================================
+function initialize() {
+  DOM.setupSection = document.getElementById('setupSection');
+  DOM.quizMain = document.getElementById('quizMain');
+  DOM.quizContent = document.getElementById('quizContent');
+  DOM.startNumberInput = document.getElementById('startNumber');
+  DOM.startQuizBtn = document.getElementById('startQuizBtn');
+  DOM.maxNumberSpan = document.getElementById('maxNumber');
+  DOM.progressText = document.getElementById('progressText');
+  DOM.quizProgressBar = document.getElementById('quizProgressBar');
+  DOM.questionContainer = document.getElementById('questionContainer');
+  DOM.explanationBox = document.getElementById('explanationBox');
+  DOM.explanationText = document.getElementById('explanationText');
+  DOM.prevBtn = document.getElementById('prevBtn');
+  DOM.nextBtn = document.getElementById('nextBtn');
+  DOM.skipBtn = document.getElementById('skipBtn');
+  DOM.submitBtn = document.getElementById('submitBtn');
+  DOM.quitBtn = document.getElementById('quitBtn');
+  DOM.resultModal = document.getElementById('resultModal');
+  DOM.correctCountSpan = document.getElementById('correctCount');
+  DOM.accuracyRateSpan = document.getElementById('accuracyRate');
+  DOM.resultGrid = document.getElementById('resultGrid');
+  DOM.retryAllBtn = document.getElementById('retryAllBtn');
+  DOM.reviewWrongBtn = document.getElementById('reviewWrongBtn');
+  DOM.closeModalBtn = document.getElementById('closeModalBtn');
+  DOM.wrongModal = document.getElementById('wrongModal');
+  DOM.wrongListDiv = document.getElementById('wrongList');
+  DOM.closeWrongBtn = document.getElementById('closeWrongBtn');
+  DOM.retryWrongFromReviewBtn = document.getElementById('retryWrongFromReviewBtn');
+  DOM.reviewBanner = document.getElementById('reviewBanner');
+  DOM.savedBadgeContainer = document.getElementById('savedBadgeContainer');
+  DOM.loadNextContainer = document.getElementById('loadNextContainer');
+  DOM.mainContainer = document.getElementById('mainContainer');
+  DOM.maxNumberDisplay = document.getElementById('maxNumberDisplay');
+  DOM.setSelector = document.getElementById('setSelector');
+  DOM.progressArea = document.querySelector('.progress-area');
+  if (!DOM.progressArea) DOM.progressArea = document.getElementById('progressArea');
+
+  addSubjectSelector();
+  var subjectSelect = document.getElementById('subjectSelect');
+  if (subjectSelect) {
+    subjectSelect.addEventListener('change', function() { SELECTED_SUBJECT = this.value; updateSetSelectorForSubject(SELECTED_SUBJECT); });
+  }
+
+  initTimer();
+  updateSplash(10, '서버 연결 중...');
+
+  setTimeout(async function() {
+    try {
+      var totalQuestions = await detectTotalQuestions(SELECTED_SUBJECT || 'sat');
+      if (totalQuestions === 0) { TOTAL_QUESTIONS = 720; localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS)); }
+      updateSetSelectorForSubject(SELECTED_SUBJECT || 'sat');
+
+      var saved = loadProgress();
+      if (saved && saved.currentQuestions && saved.currentQuestions.length > 0) {
+        var answered = saved.userAnswers.filter(function(a) { return a !== null && a !== -1; }).length;
+        var timeStr = new Date(saved.timestamp).toLocaleString();
+        DOM.savedBadgeContainer.innerHTML = '<div class="resume-badge" id="resumeBadge"><div class="count">' + answered + ' / ' + saved.currentQuestions.length + ' answered</div><div class="time">' + timeStr + '</div><div class="hint">Click to resume</div></div>';
+        var resumeBadge = document.getElementById('resumeBadge');
+        if (resumeBadge) {
+          resumeBadge.addEventListener('click', function(e) { e.stopPropagation(); var savedData = loadProgress(); if (savedData) showProgressModal(savedData); });
+        }
+        var resumeCard = document.getElementById('resumeCard');
+        if (resumeCard) {
+          var newCard = resumeCard.cloneNode(true);
+          resumeCard.parentNode.replaceChild(newCard, resumeCard);
+          newCard.addEventListener('click', function() { var savedData = loadProgress(); if (savedData) showProgressModal(savedData); });
+        }
+      } else {
+        DOM.savedBadgeContainer.innerHTML = '<div class="no-session">No saved session<small>Start a new lesson</small></div>';
+      }
+
+      attachEvents();
+      updateSplash(100, 'Ready!');
+      setTimeout(function() { DOM.startNumberInput.focus(); DOM.startNumberInput.select(); }, 400);
+      setTimeout(function() { hideSplash(); }, 700);
+      console.log('✅ Initialization complete: ' + TOTAL_QUESTIONS + ' total questions');
+    } catch(e) {
+      console.error('Initialization error:', e);
+      showSplashError(e.message || 'Initialization failed');
+    }
+  }, 300);
+}
+
+function addSubjectSelector() {
+  var setupSection = document.getElementById('setupSection');
+  if (!setupSection) return;
+  var cardsContainer = setupSection.querySelector('.cards-container');
+  if (!cardsContainer) return;
+  var cardNew = cardsContainer.querySelector('.card-new');
+  if (!cardNew) return;
+  if (document.getElementById('subjectSelect')) return;
+  var subjectDiv = document.createElement('div');
+  subjectDiv.className = 'input-wrapper';
+  subjectDiv.style.marginTop = '4px';
+  var select = document.createElement('select');
+  select.id = 'subjectSelect';
+  select.style.cssText = 'width:100%;padding:12px 14px;font-size:15px;font-weight:600;border:2px solid #ddd;border-radius:12px;text-align:center;background:#f8f9fa;outline:none;color:#1a1a2e;cursor:pointer;';
+  select.innerHTML = '<option value="">과목 로딩 중...</option>';
+  populateSubjectSelect(select);
+  subjectDiv.appendChild(select);
+  var setSelectorWrapper = cardNew.querySelector('.input-wrapper');
+  if (setSelectorWrapper) { cardNew.insertBefore(subjectDiv, setSelectorWrapper); }
+  else { cardNew.appendChild(subjectDiv); }
+}
+
+function populateSubjectSelect(select) {
+  if (!select) return;
+  var subjects = getAccessibleSubjects();
+  if (!subjects || subjects.length === 0) {
+    select.innerHTML = '<option value="sat">SAT (기본)</option>';
+    return;
+  }
+  select.innerHTML = '';
+  subjects.forEach(function(s) {
+    var option = document.createElement('option');
+    option.value = s.subject;
+    option.textContent = s.display_name + ' (' + s.total_questions + '문제)';
+    select.appendChild(option);
+  });
+  var defaultSubject = 'sat';
+  var found = false;
+  for (var i = 0; i < select.options.length; i++) {
+    if (select.options[i].value === defaultSubject) { select.value = defaultSubject; found = true; break; }
+  }
+  if (!found && select.options.length > 0) { select.value = select.options[0].value; }
+  SELECTED_SUBJECT = select.value || 'sat';
+}
+
+function updateSetSelectorForSubject(subject) {
+  var setSelector = document.getElementById('setSelector');
+  if (!setSelector) return;
+  var totalQuestions = 0;
+  var subjects = getAccessibleSubjects();
+  for (var i = 0; i < subjects.length; i++) {
+    if (subjects[i].subject === subject) { totalQuestions = subjects[i].total_questions || 0; break; }
+  }
+  if (totalQuestions === 0) totalQuestions = TOTAL_QUESTIONS || 720;
+  var totalSets = Math.ceil(totalQuestions / QUESTIONS_PER_SET);
+  while (setSelector.options.length > 0) { setSelector.remove(0); }
+  for (var i = 1; i <= totalSets; i++) {
+    var start = (i - 1) * QUESTIONS_PER_SET + 1;
+    var end = Math.min(i * QUESTIONS_PER_SET, totalQuestions);
+    var option = document.createElement('option');
+    option.value = i;
+    option.textContent = 'Set ' + i + ' (Q' + start + '-' + end + ')';
+    setSelector.appendChild(option);
+  }
+  var maxStartNumber = Math.max(1, totalQuestions - QUESTIONS_PER_SET + 1);
+  if (DOM.maxNumberDisplay) DOM.maxNumberDisplay.innerText = maxStartNumber.toLocaleString();
+  if (DOM.startNumberInput) { DOM.startNumberInput.placeholder = '1 ~ ' + maxStartNumber.toLocaleString(); DOM.startNumberInput.max = maxStartNumber; }
+  if (setSelector.options.length > 0) setSelector.value = '1';
+  if (DOM.startNumberInput) DOM.startNumberInput.value = '1';
+}
+
+// ============================================================
+// 1500 - startQuizWithNumber
+// ============================================================
+async function startQuizWithNumber(uiStartNumber) {
+  if (isNaN(uiStartNumber) || uiStartNumber < 1) uiStartNumber = 1;
+  var subject = SELECTED_SUBJECT || 'sat';
+  if (uiStartNumber > TOTAL_QUESTIONS) { uiStartNumber = 1; }
+  var setNumber = Math.ceil(uiStartNumber / QUESTIONS_PER_SET);
+  var setStart = (setNumber - 1) * QUESTIONS_PER_SET + 1;
+  var startNum = uiStartNumber;
+  if (uiStartNumber < setStart || uiStartNumber > Math.min(setNumber * QUESTIONS_PER_SET, TOTAL_QUESTIONS)) { startNum = setStart; }
+  currentStartNumber = startNum;
+  var overlay = showLoadingOverlay('Loading ' + QUESTIONS_PER_SET + ' questions from ' + startNum + '...');
+  try {
+    var questions = await load50Questions(startNum, subject);
+    if (questions.length === 0) throw new Error('No question data received');
+    masterQuestions = questions.slice();
+    currentQuestions = masterQuestions.map(function(q) { return randomizeChoicesOnly(q); });
+    userAnswers = new Array(currentQuestions.length).fill(null);
+    correctCount = 0;
+    currentIndex = 0;
+    isReviewMode = false;
+    startAutoSave();
+    hideLoadingOverlay();
+    DOM.setupSection.style.display = 'none';
+    DOM.quizMain.style.display = 'block';
+    if (DOM.quizContent) DOM.quizContent.style.display = 'block';
+    if (DOM.progressArea) DOM.progressArea.style.display = 'flex';
+    renderCurrentQuestion();
+    resetTimer();
+    startTimer();
+  } catch(err) {
+    hideLoadingOverlay();
+    alert('❌ 문제를 불러오지 못했습니다: ' + err.message);
+    console.error(err);
+  }
+}
+
+function showLoadingOverlay(text) {
+  var overlay = document.createElement('div');
+  overlay.id = 'loadingOverlay';
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9998;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;font-size:18px;';
+  overlay.innerHTML = '<div style="font-size:40px;margin-bottom:20px;">⏳</div><div>' + (text || 'Loading...') + '</div>';
+  document.body.appendChild(overlay);
+  return overlay;
+}
+
+function hideLoadingOverlay() {
+  var overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.remove();
+}
+
+// ============================================================
+// 1600 - load50Questions & detectTotalQuestions
+// ============================================================
+async function load50Questions(uiStartNumber, subject) {
+  var subjectName = subject || 'sat';
+  if (TOTAL_QUESTIONS === 0) await detectTotalQuestions(subjectName);
+  try {
+    var url = ORIGINAL_API_URL + '?start=' + uiStartNumber + '&limit=' + QUESTIONS_PER_SET + '&subject=' + subjectName;
+    var response = await fetch(url);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    var text = await response.text();
+    if (text.trim().startsWith('<IDOCTYPE') || text.trim().startsWith('<html>')) {
+      throw new Error('HTML response - check Apps Script URL');
+    }
+    var data = JSON.parse(text);
+    var questionsData = [];
+    if (Array.isArray(data)) questionsData = data;
+    else if (data && typeof data === 'object') {
+      if (Array.isArray(data.data)) questionsData = data.data;
+      else if (Array.isArray(data.questions)) questionsData = data.questions;
+      else if (Array.isArray(data.items)) questionsData = data.items;
+      else {
+        var keys = Object.keys(data);
+        if (keys.length > 0) {
+          questionsData = keys.map(function(key) {
+            var item = data[key];
+            if (typeof item === 'object' && item !== null) { item._key = key; return item; }
+            return { question: String(item), answer: '1', _key: key };
+          });
+        }
+      }
+    }
+    if (!Array.isArray(questionsData) || questionsData.length === 0) throw new Error('No question data received');
+    var processed = [];
+    for (var idx = 0; idx < questionsData.length; idx++) {
+      try {
+        var item = questionsData[idx];
+        var parsed = item;
+        if (typeof item === 'string') {
+          try { parsed = JSON.parse(item); } catch(e) { parsed = { question: item, answer: '1' }; }
+        }
+        if (!parsed || typeof parsed !== 'object') parsed = { question: String(item), answer: '1' };
+        var rawQuestion = parsed.Q || parsed.question || parsed.q || parsed.문제 || parsed.text || 'Question ' + (uiStartNumber + idx);
+        var rawPassage = parsed.passage || parsed.P || parsed.p || parsed.지문 || '';
+        var choices = {};
+        choices['1'] = parsed['1'] || '';
+        choices['2'] = parsed['2'] || '';
+        choices['3'] = parsed['3'] || '';
+        choices['4'] = parsed['4'] || '';
+        var finalAnswer = '1';
+        if (parsed.A !== undefined && parsed.A !== null && parsed.A !== "") finalAnswer = String(parsed.A).trim();
+        else if (parsed.answer !== undefined && parsed.answer !== null && parsed.answer !== "") finalAnswer = String(parsed.answer).trim();
+        else if (parsed.a !== undefined && parsed.a !== null && parsed.a !== "") finalAnswer = String(parsed.a).trim();
+        var originalNumber = parsed.N || parsed.originalNumber || parsed.n || (uiStartNumber + idx);
+        processed.push({ N: originalNumber, question: rawQuestion, passage: rawPassage, choices: choices, answer: finalAnswer, explanation: parsed.explanation || parsed.E || parsed.e || 'No explanation available.', graphic: parsed.graphic || parsed.G || parsed.g || '', originalNumber: originalNumber, A: parsed.A || parsed.answer || '' });
+      } catch(e) { console.warn('Parse error for item', idx, ':', e); }
+    }
+    if (processed.length === 0) throw new Error('No valid question data');
+    return processed;
+  } catch(err) { console.error('Load failed:', err); return []; }
+}
+
+async function detectTotalQuestions(subject) {
+  subject = subject || 'sat';
+  try {
+    var cached = localStorage.getItem(TOTAL_CACHE_KEY);
+    if (cached) { var parsed = parseInt(cached); if (!isNaN(parsed) && parsed > 0) { TOTAL_QUESTIONS = parsed; return parsed; } }
+    var url = ORIGINAL_API_URL + '?total=true&subject=' + subject;
+    var response = await fetch(url);
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    var data = await response.json();
+    if (data && typeof data === 'object' && data.total !== undefined) { TOTAL_QUESTIONS = parseInt(data.total) || 0; }
+    else { var keys = Object.keys(data); if (keys.length > 0) { TOTAL_QUESTIONS = keys.length; } }
+    if (TOTAL_QUESTIONS === 0) TOTAL_QUESTIONS = 720;
+    localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS));
+    return TOTAL_QUESTIONS;
+  } catch(e) { console.warn('Could not detect total, using fallback: 720'); TOTAL_QUESTIONS = 720; localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS)); return TOTAL_QUESTIONS; }
+}
+
+// ============================================================
+// 1700 - renderGraphic (최소 버전 - 기능 유지)
+// ============================================================
+function renderGraphic(jsonData) {
+  if (!jsonData || jsonData.trim() == "") return "";
+  var data = jsonData.trim();
+  if (data.startsWith("\"") && data.endsWith("\"")) data = data.slice(1, -1);
+  data = data.replace(/\"/g, "");
+  var parsedData = null;
+  try { parsedData = JSON.parse(data); } catch(e) { return '<div style="padding:10px;color:#999;text-align:center;">📊 그래프 데이터 오류</div>'; }
+  if (!parsedData || typeof parsedData !== 'object') return '<div style="padding:10px;color:#999;text-align:center;">📊 데이터 없음</div>';
+  var chartId = 'chart_' + Math.random().toString(36).substr(2, 9);
+  var html = '<div style="margin:15px 0;padding:15px;background:#f8f9fa;border-radius:8px;border:1px solid #e9ecef;"><canvas id="' + chartId + '" style="max-height:400px;width:100%;"></canvas></div>';
+  if (parsedData.type === 'table' && parsedData.headers && parsedData.rows) {
+    var h = '<div style="margin:15px 0;overflow-x:auto;background:white;border-radius:8px;border:1px solid #ddd;"><table style="width:100%;border-collapse:collapse;text-align:center;font-size:14px;">';
+    h += '<thead><tr style="background:#3498db;color:white;">';
+    parsedData.headers.forEach(function(hd) { h += '<th style="padding:10px 14px;border:1px solid #2980b9;font-weight:bold;">' + escapeHtml(hd) + '</th>'; });
+    h += '</tr></thead><tbody>';
+    parsedData.rows.forEach(function(row, ri) { h += '<tr style="background:' + (ri % 2 == 0 ? '#fff' : '#f8f9fa') + ';">'; row.forEach(function(cell) { h += '<td style="padding:8px 14px;border:1px solid #ddd;">' + escapeHtml(cell) + '</td>'; }); h += '</tr>'; });
+    h += '</tbody></table></div>';
+    return h;
+  }
+  setTimeout(function() {
+    var ctx = document.getElementById(chartId);
+    if (!ctx) return;
+    if (window._chartInstances && window._chartInstances[chartId]) { window._chartInstances[chartId].destroy(); }
+    if (!window._chartInstances) window._chartInstances = {};
+    var colors = ['#3498db', '#e74c3c', '#27ae60', '#f39c12', '#9b59b6', '#1abc9c', '#e67e22', '#2c3e50', '#7f8c8d', '#16a085'];
+    if (parsedData.type === 'bar' || parsedData.type === 'histogram') {
+      var labels = parsedData.labels || [];
+      var datasets = [];
+      if (parsedData.series && Array.isArray(parsedData.series)) {
+        datasets = parsedData.series.map(function(s, i) { return { label: s.name || 'Series ' + (i+1), data: s.data || [], backgroundColor: colors[i % colors.length] + '80', borderColor: colors[i % colors.length], borderWidth: 2 }; });
+      } else if (parsedData.values) {
+        datasets = [{ label: parsedData.label || 'Data', data: parsedData.values, backgroundColor: '#3498db80', borderColor: '#3498db', borderWidth: 2 }];
+      }
+      if (datasets.length > 0) {
+        var cc = { type: 'bar', data: { labels: labels, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: parsedData.title || 'Chart', font: { size: 16, weight: 'bold' } }, legend: { position: 'bottom' } }, scales: { x: { grid: { color: '#e0e0e0' } }, y: { beginAtZero: true, grid: { color: '#e0e0e0' } } } } };
+        var canvas = document.getElementById(chartId);
+        if (canvas) { canvas.parentElement.style.height = '400px'; window._chartInstances[chartId] = new Chart(canvas, cc); }
+      }
+    } else if (parsedData.type === 'pie' && parsedData.labels && parsedData.values) {
+      var cc = { type: 'pie', data: { labels: parsedData.labels, datasets: [{ data: parsedData.values, backgroundColor: parsedData.colors || ['#3498db','#e74c3c','#27ae60','#f39c12','#9b59b6','#1abc9c'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: parsedData.title || 'Pie Chart', font: { size: 16, weight: 'bold' } }, legend: { position: 'bottom' } } } };
+      var canvas = document.getElementById(chartId);
+      if (canvas) { canvas.parentElement.style.height = '400px'; window._chartInstances[chartId] = new Chart(canvas, cc); }
+    }
+  }, 100);
+  return html;
+}
+
+// ============================================================
+// 1800 - startApp (로그인 후 실행)
+// ============================================================
+function startApp() {
+  var loginScreen = document.getElementById('loginScreen');
+  if (loginScreen) loginScreen.remove();
+  initialize();
+}
+
+// ============================================================
+// 1900 - updateProgressDisplay
+// ============================================================
+function updateProgressDisplay() {
+  if (!DOM.progressText || !DOM.quizProgressBar) return;
+  var total = currentQuestions.length || 1;
+  var current = Math.min(currentIndex + 1, total);
+  DOM.progressText.textContent = current + ' / ' + total;
+  var percent = (current / total) * 100;
+  DOM.quizProgressBar.style.width = Math.min(percent, 100) + '%';
+}
+
+// ============================================================
+// 9900 - 내보내기 (기존 + 회원관리)
+// ============================================================
+
+// window 객체에 노출
+window.initialize = initialize;
+window.startQuizWithNumber = startQuizWithNumber;
+window.renderGraphic = renderGraphic;
+window.renderCurrentQuestion = renderCurrentQuestion;
+window.showExplanation = showExplanation;
+window.goNext = goNext;
+window.goPrev = goPrev;
+window.skipQuestion = skipQuestion;
+window.submitSubjective = submitSubjective;
+window.showResults = showResults;
+window.showWrongAnswersList = showWrongAnswersList;
+window.startWrongOnlyReview = startWrongOnlyReview;
+window.saveProgress = saveProgress;
+window.loadProgress = loadProgress;
+window.clearProgress = clearProgress;
+
+window.handleLogin = handleLogin;
+window.handleRegister = handleRegister;
+window.showRegisterUI = showRegisterUI;
+window.showLoginScreen = showLoginScreen;
+window.logout = logout;
+window.loadSubjects = loadSubjects;
+window.checkAutoLogin = checkAutoLogin;
+window.startApp = startApp;
+
+// ES Module export
+export {
+  initialize,
+  startQuizWithNumber,
+  renderGraphic,
+  renderCurrentQuestion,
+  showExplanation,
+  goNext,
+  goPrev,
+  skipQuestion,
+  submitSubjective,
+  showResults,
+  showWrongAnswersList,
+  startWrongOnlyReview,
+  saveProgress,
+  loadProgress,
+  handleLogin,
+  handleRegister,
+  showRegisterUI,
+  showLoginScreen,
+  logout,
+  loadSubjects,
+  checkAutoLogin,
+  startApp
+};
+
+console.log("✅ main.js loaded with exports");
