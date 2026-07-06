@@ -273,10 +273,12 @@ async function loadSubjects() {
 // ============================================================
 // 0555 - checkAutoLogin (신규)
 // ============================================================
+// ============================================================
+// 0555 - checkAutoLogin (신규)
+// ============================================================
 function checkAutoLogin() {
   var session = localStorage.getItem(SESSION_KEY);
   if (!session) return false;
-  
   try {
     var data = JSON.parse(session);
     if (Date.now() - data.timestamp < 7 * 24 * 60 * 60 * 1000) {
@@ -294,6 +296,17 @@ function checkAutoLogin() {
     localStorage.removeItem(SESSION_KEY);
   }
   return false;
+}
+
+// ============================================================
+// 0556 - logout (신규)
+// ============================================================
+function logout() {
+  if (confirm('로그아웃 하시겠습니까?')) {
+    localStorage.removeItem(SESSION_KEY);
+    CURRENT_USER = null;
+    window.location.reload();
+  }
 }
 
 
