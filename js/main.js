@@ -850,7 +850,9 @@ function initTimer() {
 
 // ============================================================
 // 1300 - 렌더링 함수 (renderSubjectiveQuestion, renderCurrentQuestion, showExplanation)
+// MathJax 직접 렌더링 방식으로 통합
 // ============================================================
+
 function renderSubjectiveQuestion(q, answered, headerText, passageHtml) {
   var isAnswered = (answered !== null && answered !== undefined && answered !== -1);
   if (!isAnswered) {
@@ -869,7 +871,7 @@ function renderSubjectiveQuestion(q, answered, headerText, passageHtml) {
     '<div class="q-num">' + headerText + '</div>' +
     passageHtml +
     renderGraphic(q.graphic) +
-    '<div class="question-text">' + escapeHtml(q.question) + '</div>';
+    '<div class="question-text math-content">' + (q.question || 'No question text') + '</div>';
   if (isAnswered) {
     var userAns = String(answered).trim();
     var isCorrect = (userAns === correctAnswerText) || (parseFloat(userAns) === parseFloat(correctAnswerText));
@@ -892,6 +894,12 @@ function renderSubjectiveQuestion(q, answered, headerText, passageHtml) {
   }
   html += '</div></div>';
   DOM.questionContainer.innerHTML = html;
+  
+  // MathJax 렌더링 실행
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([DOM.questionContainer]).catch(console.warn);
+  }
+  
   var isLastQuestion = (currentIndex >= currentQuestions.length - 1);
   if (isLastQuestion) {
     DOM.nextBtn.style.display = 'none';
@@ -921,8 +929,9 @@ function renderCurrentQuestion() {
     return;
   }
   console.log('🔍 Current question:', q);
-  console.log('🔍 q.question:', q.question);
+  console.log('🔍 q.question (raw LaTeX):', q.question);
   console.log('🔍 q.choices:', q.choices);
+  
   var answered = userAnswers[currentIndex];
   updateProgressDisplay();
   var actualNumber = q.originalNumber || (currentStartNumber + currentIndex);
@@ -956,11 +965,13 @@ function renderCurrentQuestion() {
     }
   }
   var displayAnswer = actualAnswerKey !== null ? validKeys.indexOf(actualAnswerKey) + 1 : parseInt(originalAnswerKey);
+  
+  // ★★★ 중요: MathJax가 직접 렌더링하도록 raw LaTeX 유지 ★★★
   var html = '<div class="question-card">' +
     '<div class="q-num">' + headerText + '</div>' +
     passageHtml +
     renderGraphic(q.graphic) +
-    '<div class="question-text">' + escapeHtml(q.question || 'No question text') + '</div>' +
+    '<div class="question-text math-content">' + (q.question || 'No question text') + '</div>' +
     '<div class="choices">';
   for (var idx = 0; idx < validKeys.length; idx++) {
     var key = validKeys[idx];
@@ -977,14 +988,29 @@ function renderCurrentQuestion() {
       if (isCorrectChoice) cls += ' correct';
       if (isSelected && !isCorrectChoice) cls += ' incorrect';
     }
+    // 선택지 텍스트도 MathJax 렌더링 대상 (선택지에도 LaTeX 있을 수 있음)
     html += '<div class="' + cls + '" data-choice="' + choiceNum + '">' +
       '<span class="choice-letter">' + letter + '</span>' +
-      '<span>' + escapeHtml(choiceText) + '</span>' +
+      '<span class="math-content">' + choiceText + '</span>' +
       '</div>';
   }
   html += '</div></div>';
   DOM.questionContainer.innerHTML = html;
   console.log('✅ Question rendered');
+  
+  // ★★★ MathJax로 LaTeX 렌더링 ★★★
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([DOM.questionContainer])
+      .then(function() {
+        console.log('✅ MathJax rendering complete');
+      })
+      .catch(function(err) {
+        console.warn('⚠️ MathJax rendering error:', err);
+      });
+  } else {
+    console.warn('⚠️ MathJax not available. LaTeX will not render.');
+  }
+  
   var choiceEls = DOM.questionContainer.querySelectorAll('.choice:not(.disabled)');
   choiceEls.forEach(function(el) {
     el.addEventListener('click', function() {
@@ -1046,8 +1072,13 @@ function showExplanation() {
       '<div style="margin-top:8px;font-size:14px;color:#555;">' +
       'Your answer: <strong>' + escapeHtml(userAns) + '</strong>' +
       '</div>' +
-      '<p style="margin-top:12px;">' + escapeHtml(q.explanation || LANG.noExplanation) + '</p>';
+      '<p style="margin-top:12px;" class="math-content">' + escapeHtml(q.explanation || LANG.noExplanation) + '</p>';
     DOM.explanationBox.classList.add('show');
+    
+    // 설명에도 LaTeX 있을 수 있으므로 MathJax 렌더링
+    if (window.MathJax && MathJax.typesetPromise) {
+      MathJax.typesetPromise([DOM.explanationText]).catch(console.warn);
+    }
     return;
   }
   var validKeys = getValidChoiceKeys(q.choices);
@@ -1073,8 +1104,13 @@ function showExplanation() {
     '<div style="margin-top:8px;font-size:14px;color:#555;">' +
     'Your answer: <strong>' + userAnswerLetter + '</strong>' +
     '</div>' +
-    '<p style="margin-top:12px;">' + escapeHtml(q.explanation || LANG.noExplanation) + '</p>';
+    '<p style="margin-top:12px;" class="math-content">' + escapeHtml(q.explanation || LANG.noExplanation) + '</p>';
   DOM.explanationBox.classList.add('show');
+  
+  // 설명에도 LaTeX 있을 수 있으므로 MathJax 렌더링
+  if (window.MathJax && MathJax.typesetPromise) {
+    MathJax.typesetPromise([DOM.explanationText]).catch(console.warn);
+  }
 }
 
 // ============================================================
@@ -2726,13 +2762,10 @@ function renderGraphic(jsonData) {
 }
 
 // ============================================================
-// 9900 - 내보내기 및 전역 노출
+// 9900 - 내보내기 및 전역 노출 (renderLatex 제거)
 // ============================================================
 
-// 1. renderLatex를 전역에 먼저 노출 (중요!)
-window.renderLatex = renderLatex;
-
-// 2. 모든 주요 함수를 전역에 노출
+// 1. 모든 주요 함수를 전역에 노출
 window.initialize = initialize;
 window.startQuizWithNumber = startQuizWithNumber;
 window.renderGraphic = renderGraphic;
@@ -2749,13 +2782,13 @@ window.saveProgress = saveProgress;
 window.loadProgress = loadProgress;
 window.clearProgress = clearProgress;
 
-// 3. LANG 객체도 전역에 노출 (필요시)
+// 2. LANG 객체도 전역에 노출
 window.LANG = LANG;
 
-// 4. DOM 객체도 전역에 노출 (디버깅용)
+// 3. DOM 객체도 전역에 노출 (디버깅용)
 window.DOM = DOM;
 
-// 5. 주요 변수들도 전역에 노출 (디버깅용)
+// 4. 주요 변수들도 전역에 노출 (디버깅용)
 window.currentQuestions = currentQuestions;
 window.userAnswers = userAnswers;
 window.currentIndex = currentIndex;
@@ -2764,6 +2797,6 @@ window.isReviewMode = isReviewMode;
 window.currentStartNumber = currentStartNumber;
 window.TOTAL_QUESTIONS = TOTAL_QUESTIONS;
 
-console.log("✅ Full main.js loaded with all functions!");
-console.log("✅ renderLatex is now available globally:", typeof window.renderLatex);
-console.log("✅ You can test with: renderLatex('\\\\frac{1}{2}')");
+// 5. MathJax 상태 확인용
+console.log("✅ Full main.js loaded!");
+console.log("✅ MathJax available:", typeof MathJax !== 'undefined');
