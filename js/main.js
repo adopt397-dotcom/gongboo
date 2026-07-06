@@ -757,6 +757,43 @@ function resumeProgress(saved) {
   renderCurrentQuestion();
 }
 
+
+// ============================================================
+// 1350 - addSubjectSelector (신규 추가)
+// ============================================================
+function addSubjectSelector() {
+  var setupSection = document.getElementById('setupSection');
+  if (!setupSection) return;
+  
+  var cardsContainer = setupSection.querySelector('.cards-container');
+  if (!cardsContainer) return;
+  
+  var cardNew = cardsContainer.querySelector('.card-new');
+  if (!cardNew) return;
+  
+  // 이미 존재하면 추가하지 않음
+  if (document.getElementById('subjectSelect')) return;
+  
+  var subjectDiv = document.createElement('div');
+  subjectDiv.className = 'input-wrapper';
+  subjectDiv.style.marginTop = '4px';
+  
+  var select = document.createElement('select');
+  select.id = 'subjectSelect';
+  select.style.cssText = 'width:100%;padding:12px 14px;font-size:15px;font-weight:600;border:2px solid #ddd;border-radius:12px;text-align:center;background:#f8f9fa;outline:none;color:#1a1a2e;cursor:pointer;';
+  select.innerHTML = '<option value="">과목 로딩 중...</option>';
+  
+  // 과목 목록 채우기 (나중에 loadSubjects 후 업데이트)
+  subjectDiv.appendChild(select);
+  
+  // setSelector 위에 삽입
+  var setSelectorWrapper = cardNew.querySelector('.input-wrapper');
+  if (setSelectorWrapper) {
+    cardNew.insertBefore(subjectDiv, setSelectorWrapper);
+  } else {
+    cardNew.appendChild(subjectDiv);
+  }
+}
 // ============================================================
 // 1400 - initialize
 // ============================================================
