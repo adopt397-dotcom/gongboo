@@ -898,7 +898,6 @@ function renderCurrentQuestion() {
 
 // ============================================================
 // 1300 - 렌더링 함수 (renderSubjectiveQuestion, renderCurrentQuestionNew, showExplanation)
-// MathJax 직접 렌더링 + 선택지 자동 LaTeX 변환 + 질문 텍스트 강제 변환
 // ============================================================
 
 // ★★★★★ 자동 LaTeX 감싸기 함수 ★★★★★
@@ -1199,7 +1198,8 @@ function showExplanation() {
   }
 }
 
-// ★★★★★ 기존 renderCurrentQuestion을 새로운 함수로 덮어쓰기 ★★★★★
+// ★★★★★ 중요: 기존 renderCurrentQuestion을 새로운 함수로 덮어쓰기 ★★★★★
+// 이렇게 하면 중복 선언 오류 없이 기존 함수가 새 함수로 대체됩니다.
 renderCurrentQuestion = renderCurrentQuestionNew;
 
 
