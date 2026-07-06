@@ -244,30 +244,42 @@ function randomizeChoicesOnly(q) {
 // 0550 - loadSubjects (로그 추가)
 // ============================================================
 async function loadSubjects() {
-    console.log("🔍 loadSubjects 시작");
+  console.log("🔍 loadSubjects 시작");
 
-    try {
-        const response = await fetch(MEMBER_API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                action: "subjects"
-            })
-        });
+  if (SUBJECTS_LOADED) {
+    console.log("✅ loadSubjects: 이미 로드됨 (캐시 사용)");
+    return SUBJECTS_LIST;
+  }
 
-        console.log("✅ response 상태:", response.status);
+  try {
+    const response = await fetch(MEMBER_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "subjects" })
+    });
 
-        const result = await response.json();
-        console.log("✅ loadSubjects 결과:", result);
+    console.log("✅ response 상태:", response.status);
 
-        return result;
-
-    } catch (e) {
-        console.error("❌ loadSubjects 오류:", e);
-        throw e;
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
+
+    const result = await response.json();
+    console.log("✅ loadSubjects 결과:", result);
+
+    if (result.success && result.data) {
+      SUBJECTS_LIST = result.data;
+      SUBJECTS_LOADED = true;
+      return SUBJECTS_LIST;
+    } else {
+      console.warn("⚠️ loadSubjects: 응답 실패", result.message);
+      return [];
+    }
+
+  } catch (e) {
+    console.error("❌ loadSubjects 오류:", e);
+    throw e;
+  }
 }
 
 // ============================================================
@@ -749,20 +761,164 @@ function resumeProgress(saved) {
 // 1400 - initialize
 // ============================================================
 // ============================================================
-// 1400 - initialize 함수 (수정)
+// 1400 - initialize (최종)
 // ============================================================
-function initialize() {
-  // ... 기존 코드 ...
+async function initialize() {
+  console.log("🚀 initialize 시작");
 
-  // ✅ 로그인 화면 자동 표시 (추가)
-  var loginScreen = document.getElementById('loginScreen');
-  if (loginScreen) {
-    loginScreen.style.display = 'flex';
-  } else {
-    console.warn('⚠️ loginScreen 요소를 찾을 수 없음');
+  try {
+    // 1. DOM 연결
+    DOM.setupSection = document.getElementById('setupSection');
+    DOM.quizMain = document.getElementById('quizMain');
+    DOM.quizContent = document.getElementById('quizContent');
+    DOM.startNumberInput = document.getElementById('startNumber');
+    DOM.startQuizBtn = document.getElementById('startQuizBtn');
+    DOM.maxNumberSpan = document.getElementById('maxNumber');
+    DOM.progressText = document.getElementById('progressText');
+    DOM.quizProgressBar = document.getElementById('quizProgressBar');
+    DOM.questionContainer = document.getElementById('questionContainer');
+    DOM.explanationBox = document.getElementById('explanationBox');
+    DOM.explanationText = document.getElementById('explanationText');
+    DOM.prevBtn = document.getElementById('prevBtn');
+    DOM.nextBtn = document.getElementById('nextBtn');
+    DOM.skipBtn = document.getElementById('skipBtn');
+    DOM.submitBtn = document.getElementById('submitBtn');
+    DOM.quitBtn = document.getElementById('quitBtn');
+    DOM.resultModal = document.getElementById('resultModal');
+    DOM.correctCountSpan = document.getElementById('correctCount');
+    DOM.accuracyRateSpan = document.getElementById('accuracyRate');
+    DOM.resultGrid = document.getElementById('resultGrid');
+    DOM.retryAllBtn = document.getElementById('retryAllBtn');
+    DOM.reviewWrongBtn = document.getElementById('reviewWrongBtn');
+    DOM.closeModalBtn = document.getElementById('closeModalBtn');
+    DOM.wrongModal = document.getElementById('wrongModal');
+    DOM.wrongListDiv = document.getElementById('wrongList');
+    DOM.closeWrongBtn = document.getElementById('closeWrongBtn');
+    DOM.retryWrongFromReviewBtn = document.getElementById('retryWrongFromReviewBtn');
+    DOM.reviewBanner = document.getElementById('reviewBanner');
+    DOM.savedBadgeContainer = document.getElementById('savedBadgeContainer');
+    DOM.loadNextContainer = document.getElementById('loadNextContainer');
+    DOM.mainContainer = document.getElementById('mainContainer');
+    DOM.maxNumberDisplay = document.getElementById('maxNumberDisplay');
+    DOM.setSelector = document.getElementById('setSelector');
+    DOM.progressArea = document.querySelector('.progress-area');
+    if (!DOM.progressArea) DOM.progressArea = document.getElementById('progressArea');
+
+    console.log("✅ DOM 연결 완료");
+
+    // 2. 과목 선택기 추가
+    addSubjectSelector();
+    var subjectSelect = document.getElementById('subjectSelect');
+    if (subjectSelect) {
+      subjectSelect.addEventListener('change', function() {
+        SELECTED_SUBJECT = this.value;
+        updateSetSelectorForSubject(SELECTED_SUBJECT);
+      });
+    }
+    console.log("✅ 과목 선택기 추가 완료");
+
+    // 3. 타이머 초기화
+    initTimer();
+    updateSplash(10, '서버 연결 중...');
+    console.log("✅ 타이머 초기화 완료");
+
+    // 4. 과목 목록 로드
+    console.log("🔍 loadSubjects 호출 시작");
+    await loadSubjects();
+    console.log("✅ loadSubjects 완료");
+
+    // 5. 총 문제수 확인
+    console.log("🔍 detectTotalQuestions 호출 시작");
+    await detectTotalQuestions(SELECTED_SUBJECT || 'sat');
+    console.log("✅ detectTotalQuestions 완료: " + TOTAL_QUESTIONS);
+
+    // 6. Set 선택기 업데이트
+    updateSetSelectorForSubject(SELECTED_SUBJECT || 'sat');
+    console.log("✅ Set 선택기 업데이트 완료");
+
+    // 7. 저장된 진행 상황 확인
+    var saved = loadProgress();
+    if (saved && saved.currentQuestions && saved.currentQuestions.length > 0) {
+      var answered = saved.userAnswers.filter(function(a) { return a !== null && a !== -1; }).length;
+      var timeStr = new Date(saved.timestamp).toLocaleString();
+      DOM.savedBadgeContainer.innerHTML =
+        '<div class="resume-badge" id="resumeBadge">' +
+          '<div class="count">' + answered + ' / ' + saved.currentQuestions.length + ' answered</div>' +
+          '<div class="time">' + timeStr + '</div>' +
+          '<div class="hint">Click to resume</div>' +
+        '</div>';
+      var resumeBadge = document.getElementById('resumeBadge');
+      if (resumeBadge) {
+        resumeBadge.addEventListener('click', function(e) {
+          e.stopPropagation();
+          var savedData = loadProgress();
+          if (savedData) showProgressModal(savedData);
+        });
+      }
+      var resumeCard = document.getElementById('resumeCard');
+      if (resumeCard) {
+        var newCard = resumeCard.cloneNode(true);
+        resumeCard.parentNode.replaceChild(newCard, resumeCard);
+        newCard.addEventListener('click', function() {
+          var savedData = loadProgress();
+          if (savedData) showProgressModal(savedData);
+        });
+      }
+    } else {
+      DOM.savedBadgeContainer.innerHTML = '<div class="no-session">No saved session<small>Start a new lesson</small></div>';
+    }
+    console.log("✅ 진행 상황 확인 완료");
+
+    // 8. 이벤트 연결
+    attachEvents();
+    console.log("✅ 이벤트 연결 완료");
+
+    // 9. 스플래시 숨기기
+    updateSplash(100, 'Ready!');
+    console.log("✅ 스플래시 100%");
+
+    // 10. 로그인 화면 표시
+    var loginScreen = document.getElementById('loginScreen');
+    if (loginScreen) {
+      loginScreen.style.display = 'flex';
+      console.log("✅ 로그인 화면 표시");
+    } else {
+      console.warn('⚠️ loginScreen 요소를 찾을 수 없음');
+    }
+
+    // 11. 스플래시 제거
+    var overlay = document.getElementById('splashOverlay');
+    if (overlay) {
+      overlay.style.opacity = '0';
+      setTimeout(function() {
+        overlay.style.display = 'none';
+        var main = document.getElementById('mainContainer');
+        if (main) main.style.display = 'block';
+        console.log("✅ 스플래시 제거 완료");
+      }, 500);
+    }
+
+    console.log("🎉 initialize 완료");
+
+  } catch (e) {
+    console.error("❌ initialize 오류:", e);
+    console.error(e.stack);
+
+    // 오류 시에도 로그인 화면은 표시
+    var loginScreen = document.getElementById('loginScreen');
+    if (loginScreen) {
+      loginScreen.style.display = 'flex';
+    }
+    var overlay = document.getElementById('splashOverlay');
+    if (overlay) {
+      overlay.style.opacity = '0';
+      setTimeout(function() {
+        overlay.style.display = 'none';
+        var main = document.getElementById('mainContainer');
+        if (main) main.style.display = 'block';
+      }, 500);
+    }
   }
-
-  // ... 나머지 코드 ...
 }
 
 // ============================================================
