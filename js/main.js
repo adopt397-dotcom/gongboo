@@ -93,6 +93,9 @@ function hideSplash() {
 // ============================================================
 // 0450 - 로그인/회원가입 UI
 // ============================================================
+// ============================================================
+// 0450 - 로그인/회원가입 UI (headers 제거 - preflight 방지)
+// ============================================================
 function showLoginScreen() {
   var loginHTML = `
     <div id="loginScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);z-index:9999;display:flex;justify-content:center;align-items:center;padding:20px;box-sizing:border-box;">
@@ -139,7 +142,11 @@ async function handleLogin() {
   msg.style.color = '#f5a623';
   btn.disabled = true;
   try {
-    var res = await fetch(MEMBER_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'login', email, pin }) });
+    // 🔥 headers 제거 (preflight 방지)
+    var res = await fetch(MEMBER_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'login', email, pin })
+    });
     var result = await res.json();
     if (result.success) {
       CURRENT_USER = result.data;
@@ -199,7 +206,11 @@ async function handleRegister() {
   msg.textContent = '⏳ 처리 중...';
   if (btn) btn.disabled = true;
   try {
-    var res = await fetch(MEMBER_API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'register', email, pin, name: name || email }) });
+    // 🔥 headers 제거 (preflight 방지)
+    var res = await fetch(MEMBER_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'register', email, pin, name: name || email })
+    });
     var result = await res.json();
     if (result.success) {
       msg.textContent = '✅ ' + result.message;
