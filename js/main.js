@@ -709,7 +709,7 @@ function resumeProgress(saved) {
 // 1400 - initialize
 // ============================================================
 // ============================================================
-// 1400 - initialize 함수 (수정 완료)
+// 1400 - initialize 함수 (최종 수정)
 // ============================================================
 function initialize() {
   DOM.setupSection = document.getElementById('setupSection');
@@ -785,7 +785,7 @@ function initialize() {
       attachEvents();
       updateSplash(100, 'Ready!');
       
-      // ✅ 스플래시 숨기기 (hideSplash 대신 직접 처리)
+      // ✅ 스플래시 직접 제어 (hideSplash 의존 제거)
       setTimeout(function() {
         var overlay = document.getElementById('splashOverlay');
         if (overlay) {
@@ -813,7 +813,7 @@ function initialize() {
     } catch(e) {
       console.error('Initialization error:', e);
       showSplashError(e.message || 'Initialization failed');
-      // 에러 발생 시에도 스플래시 숨기기
+      // 에러 시에도 스플래시 강제 숨김
       setTimeout(function() {
         var overlay = document.getElementById('splashOverlay');
         if (overlay) {
