@@ -932,7 +932,7 @@ function updateProgressDisplay() {
 // 9900 - 내보내기 (기존 + 회원관리)
 // ============================================================
 
-// window 객체에 노출
+// window 객체에 노출 (HTML에서 직접 호출용)
 window.initialize = initialize;
 window.startQuizWithNumber = startQuizWithNumber;
 window.renderGraphic = renderGraphic;
@@ -958,7 +958,7 @@ window.loadSubjects = loadSubjects;
 window.checkAutoLogin = checkAutoLogin;
 window.startApp = startApp;
 
-// ES Module export
+// ES Module export (import { ... } from ... 용)
 export {
   initialize,
   startQuizWithNumber,
