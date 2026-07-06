@@ -82,41 +82,105 @@ var chartInstances = {};
 var DOM = {};
 
 // ============================================================
-// 0300 - LaTeX 변환 함수 (renderLatex)
+// 0300 - LaTeX 변환 함수 (renderLatex) - 수정 완료
 // ============================================================
 function renderLatex(text) {
   if (!text) return '';
-  return text
-    .replace(/\\\\\\(/g, '\\(')
-    .replace(/\\\\\\)/g, '\\)')
-    .replace(/\\\\\\[/g, '\\[')
-    .replace(/\\\\\\]/g, '\\]')
-    .replace(/\\\\frac/g, '\\frac')
-    .replace(/\\\\sqrt/g, '\\sqrt')
-    .replace(/\\\\sum/g, '\\sum')
-    .replace(/\\\\int/g, '\\int')
-    .replace(/\\\\alpha/g, '\\alpha')
-    .replace(/\\\\beta/g, '\\beta')
-    .replace(/\\\\gamma/g, '\\gamma')
-    .replace(/\\\\delta/g, '\\delta')
-    .replace(/\\\\epsilon/g, '\\epsilon')
-    .replace(/\\\\theta/g, '\\theta')
-    .replace(/\\\\pi/g, '\\pi')
-    .replace(/\\\\sigma/g, '\\sigma')
-    .replace(/\\\\omega/g, '\\omega')
-    .replace(/\\\\infty/g, '\\infty')
-    .replace(/\\\\pm/g, '\\pm')
-    .replace(/\\\\times/g, '\\times')
-    .replace(/\\\\div/g, '\\div')
-    .replace(/\\\\leq/g, '\\leq')
-    .replace(/\\\\geq/g, '\\geq')
-    .replace(/\\\\neq/g, '\\neq')
-    .replace(/\\\\approx/g, '\\approx')
-    .replace(/\\\\cdot/g, '\\cdot')
-    .replace(/\\\\left/g, '\\left')
-    .replace(/\\\\right/g, '\\right')
-    .replace(/\\\\\{/g, '\\{')
-    .replace(/\\\\\}/g, '\\}');
+  
+  var str = String(text);
+  
+  // 1. JSON 이스케이프 처리 (문자열 그대로 유지)
+  // \\( -> (  (실제로는 백슬래시+괄호)
+  // \\) -> )
+  
+  // 2. 수학식 구분자 처리
+  str = str.replace(/\\\\\\(/g, '\\(');   // \\\\( -> \(
+  str = str.replace(/\\\\\\)/g, '\\)');   // \\\\) -> \)
+  str = str.replace(/\\\\\\[/g, '\\[');   // \\\\[ -> \[
+  str = str.replace(/\\\\\\]/g, '\\]');   // \\\\] -> \]
+  
+  // 3. 일반 LaTeX 명령어 변환
+  str = str.replace(/\\\\frac/g, '\\frac');
+  str = str.replace(/\\\\sqrt/g, '\\sqrt');
+  str = str.replace(/\\\\sum/g, '\\sum');
+  str = str.replace(/\\\\int/g, '\\int');
+  str = str.replace(/\\\\prod/g, '\\prod');
+  str = str.replace(/\\\\lim/g, '\\lim');
+  str = str.replace(/\\\\log/g, '\\log');
+  str = str.replace(/\\\\ln/g, '\\ln');
+  str = str.replace(/\\\\sin/g, '\\sin');
+  str = str.replace(/\\\\cos/g, '\\cos');
+  str = str.replace(/\\\\tan/g, '\\tan');
+  str = str.replace(/\\\\cot/g, '\\cot');
+  str = str.replace(/\\\\sec/g, '\\sec');
+  str = str.replace(/\\\\csc/g, '\\csc');
+  
+  // 4. 그리스 문자
+  str = str.replace(/\\\\alpha/g, '\\alpha');
+  str = str.replace(/\\\\beta/g, '\\beta');
+  str = str.replace(/\\\\gamma/g, '\\gamma');
+  str = str.replace(/\\\\delta/g, '\\delta');
+  str = str.replace(/\\\\epsilon/g, '\\epsilon');
+  str = str.replace(/\\\\theta/g, '\\theta');
+  str = str.replace(/\\\\lambda/g, '\\lambda');
+  str = str.replace(/\\\\pi/g, '\\pi');
+  str = str.replace(/\\\\sigma/g, '\\sigma');
+  str = str.replace(/\\\\omega/g, '\\omega');
+  str = str.replace(/\\\\phi/g, '\\phi');
+  str = str.replace(/\\\\psi/g, '\\psi');
+  str = str.replace(/\\\\rho/g, '\\rho');
+  str = str.replace(/\\\\mu/g, '\\mu');
+  str = str.replace(/\\\\nu/g, '\\nu');
+  
+  // 5. 수학 연산자
+  str = str.replace(/\\\\infty/g, '\\infty');
+  str = str.replace(/\\\\pm/g, '\\pm');
+  str = str.replace(/\\\\mp/g, '\\mp');
+  str = str.replace(/\\\\times/g, '\\times');
+  str = str.replace(/\\\\div/g, '\\div');
+  str = str.replace(/\\\\cdot/g, '\\cdot');
+  str = str.replace(/\\\\circ/g, '\\circ');
+  
+  // 6. 비교 연산자
+  str = str.replace(/\\\\leq/g, '\\leq');
+  str = str.replace(/\\\\geq/g, '\\geq');
+  str = str.replace(/\\\\neq/g, '\\neq');
+  str = str.replace(/\\\\approx/g, '\\approx');
+  str = str.replace(/\\\\equiv/g, '\\equiv');
+  str = str.replace(/\\\\propto/g, '\\propto');
+  
+  // 7. 집합 기호
+  str = str.replace(/\\\\cup/g, '\\cup');
+  str = str.replace(/\\\\cap/g, '\\cap');
+  str = str.replace(/\\\\subset/g, '\\subset');
+  str = str.replace(/\\\\supset/g, '\\supset');
+  str = str.replace(/\\\\subseteq/g, '\\subseteq');
+  str = str.replace(/\\\\supseteq/g, '\\supseteq');
+  str = str.replace(/\\\\in/g, '\\in');
+  str = str.replace(/\\\\notin/g, '\\notin');
+  str = str.replace(/\\\\emptyset/g, '\\emptyset');
+  
+  // 8. 화살표
+  str = str.replace(/\\\\rightarrow/g, '\\rightarrow');
+  str = str.replace(/\\\\leftarrow/g, '\\leftarrow');
+  str = str.replace(/\\\\Rightarrow/g, '\\Rightarrow');
+  str = str.replace(/\\\\Leftarrow/g, '\\Leftarrow');
+  str = str.replace(/\\\\leftrightarrow/g, '\\leftrightarrow');
+  str = str.replace(/\\\\Longrightarrow/g, '\\Longrightarrow');
+  
+  // 9. 괄호 및 구분자
+  str = str.replace(/\\\\left/g, '\\left');
+  str = str.replace(/\\\\right/g, '\\right');
+  str = str.replace(/\\\\{/g, '\\{');
+  str = str.replace(/\\\\}/g, '\\}');
+  
+  // 10. 추가 특수 기호
+  str = str.replace(/\\\\prime/g, '\\prime');
+  str = str.replace(/\\\\partial/g, '\\partial');
+  str = str.replace(/\\\\nabla/g, '\\nabla');
+  str = str.replace(/\\\\hbar/g, '\\hbar');
+  
+  return str;
 }
 
 // ============================================================
