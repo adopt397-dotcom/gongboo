@@ -896,6 +896,11 @@ function renderCurrentQuestion() {
 // MathJax 직접 렌더링 + 선택지 자동 LaTeX 변환 + 질문 텍스트 강제 변환
 // ============================================================
 
+// ============================================================
+// 1300 - 렌더링 함수 (renderSubjectiveQuestion, renderCurrentQuestion, showExplanation)
+// MathJax 직접 렌더링 + 선택지 자동 LaTeX 변환 + 질문 텍스트 강제 변환
+// ============================================================
+
 // ★★★★★ 자동 LaTeX 감싸기 함수 ★★★★★
 function autoWrapLatex(text) {
     if (!text) return text;
@@ -1041,12 +1046,10 @@ function renderCurrentQuestion() {
   var displayAnswer = actualAnswerKey !== null ? validKeys.indexOf(actualAnswerKey) + 1 : parseInt(originalAnswerKey);
 
   // ★★★★★ 질문 텍스트 LaTeX 변환 ★★★★★
-  // \(...\) → $...$ 로 변환 (MathJax가 더 잘 인식)
   var questionDisplay = q.question || 'No question text';
   questionDisplay = questionDisplay.replace(/\\\(/g, '$').replace(/\\\)/g, '$');
   console.log('🔍 questionDisplay after conversion:', questionDisplay);
 
-  // ★★★ 중요: MathJax가 직접 렌더링하도록 raw LaTeX 유지 ★★★
   var html = '<div class="question-card">' +
     '<div class="q-num">' + headerText + '</div>' +
     passageHtml +
@@ -1076,7 +1079,6 @@ function renderCurrentQuestion() {
   html += '</div></div>';
   DOM.questionContainer.innerHTML = html;
   console.log('✅ Question rendered');
-  console.log('🔍 HTML preview:', html.substring(0, 300));
 
   // ★★★ MathJax로 LaTeX 렌더링 ★★★
   if (window.MathJax && MathJax.typesetPromise) {
@@ -1125,6 +1127,7 @@ function renderCurrentQuestion() {
   DOM.prevBtn.disabled = (currentIndex === 0);
 }
 
+// ★★★★★ showExplanation 함수 (반드시 필요!) ★★★★★
 function showExplanation() {
   var q = currentQuestions[currentIndex];
   var ans = userAnswers[currentIndex];
@@ -1146,7 +1149,6 @@ function showExplanation() {
     var isCorrect = (userAns === correctAns) || (parseFloat(userAns) === parseFloat(correctAns));
     var statusColor = isCorrect ? '#27ae60' : '#e74c3c';
     
-    // ★★★★★ 설명 텍스트 LaTeX 변환 ★★★★★
     var explanationText = q.explanation || LANG.noExplanation;
     explanationText = explanationText.replace(/\\\(/g, '$').replace(/\\\)/g, '$');
     
@@ -1182,7 +1184,6 @@ function showExplanation() {
   var isCorrect = (ans === displayAnswerIndex);
   var statusColor = isCorrect ? '#27ae60' : '#e74c3c';
   
-  // ★★★★★ 설명 텍스트 LaTeX 변환 ★★★★★
   var explanationText = q.explanation || LANG.noExplanation;
   explanationText = explanationText.replace(/\\\(/g, '$').replace(/\\\)/g, '$');
   
