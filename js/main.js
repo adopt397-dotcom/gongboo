@@ -897,10 +897,11 @@ function renderCurrentQuestion() {
 // ============================================================
 
 // ============================================================
-// 1300 - 렌더링 함수
+// 1300 - 렌더링 함수 (renderSubjectiveQuestion, renderCurrentQuestionNew, showExplanation)
+// MathJax 직접 렌더링 + 선택지 자동 LaTeX 변환 + 질문 텍스트 강제 변환
 // ============================================================
 
-// autoWrapLatex 함수
+// ★★★★★ 자동 LaTeX 감싸기 함수 ★★★★★
 function autoWrapLatex(text) {
     if (!text) return text;
     if (text.includes('\\(') || text.includes('$')) return text;
@@ -993,9 +994,9 @@ function renderSubjectiveQuestion(q, answered, headerText, passageHtml) {
   DOM.prevBtn.disabled = (currentIndex === 0);
 }
 
-// ★★★★★ renderCurrentQuestion 함수 (유일한 선언) ★★★★★
-function renderCurrentQuestion() {
-  console.log('🔴 renderCurrentQuestion START');
+// ★★★★★ renderCurrentQuestionNew 함수 (이름 변경) ★★★★★
+function renderCurrentQuestionNew() {
+  console.log('🔴 renderCurrentQuestionNew START');
   if (!currentQuestions.length || currentIndex >= currentQuestions.length) {
     DOM.questionContainer.innerHTML = '<div style="padding:40px;text-align:center;color:red;">Error: Cannot load question</div>';
     return;
@@ -1097,7 +1098,7 @@ function renderCurrentQuestion() {
       userAnswers[currentIndex] = choice;
       if (choice === displayAnswer) correctCount++;
       saveProgress();
-      renderCurrentQuestion();
+      renderCurrentQuestionNew();
       showExplanation();
     });
   });
@@ -1198,6 +1199,8 @@ function showExplanation() {
   }
 }
 
+// ★★★★★ 기존 renderCurrentQuestion을 새로운 함수로 덮어쓰기 ★★★★★
+renderCurrentQuestion = renderCurrentQuestionNew;
 
 
 // ============================================================
