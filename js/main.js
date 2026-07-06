@@ -941,8 +941,8 @@ function renderSubjectiveQuestion(q, answered, headerText, passageHtml) {
     correctAnswerText = 'Answer not available';
   }
   
+  // ★★★★★ 변환 없이 raw LaTeX 그대로 사용 ★★★★★
   var questionDisplay = q.question || 'No question text';
-  questionDisplay = questionDisplay.replace(/\\\(/g, '$').replace(/\\\)/g, '$');
   
   var html = '<div class="question-card">' +
     '<div class="q-num">' + headerText + '</div>' +
@@ -993,7 +993,7 @@ function renderSubjectiveQuestion(q, answered, headerText, passageHtml) {
   DOM.prevBtn.disabled = (currentIndex === 0);
 }
 
-// ★★★★★ renderCurrentQuestionNew 함수 (이름 변경) ★★★★★
+// ★★★★★ renderCurrentQuestionNew 함수 (변환 제거) ★★★★★
 function renderCurrentQuestionNew() {
   console.log('🔴 renderCurrentQuestionNew START');
   if (!currentQuestions.length || currentIndex >= currentQuestions.length) {
@@ -1043,9 +1043,9 @@ function renderCurrentQuestionNew() {
   }
   var displayAnswer = actualAnswerKey !== null ? validKeys.indexOf(actualAnswerKey) + 1 : parseInt(originalAnswerKey);
 
+  // ★★★★★ 변환 없이 raw LaTeX 그대로 사용 ★★★★★
   var questionDisplay = q.question || 'No question text';
-  questionDisplay = questionDisplay.replace(/\\\(/g, '$').replace(/\\\)/g, '$');
-  console.log('🔍 questionDisplay after conversion:', questionDisplay);
+  console.log('🔍 questionDisplay (raw):', questionDisplay);
 
   var html = '<div class="question-card">' +
     '<div class="q-num">' + headerText + '</div>' +
@@ -1145,8 +1145,8 @@ function showExplanation() {
     var isCorrect = (userAns === correctAns) || (parseFloat(userAns) === parseFloat(correctAns));
     var statusColor = isCorrect ? '#27ae60' : '#e74c3c';
     
+    // ★★★★★ 설명 텍스트 변환 없이 raw 그대로 ★★★★★
     var explanationText = q.explanation || LANG.noExplanation;
-    explanationText = explanationText.replace(/\\\(/g, '$').replace(/\\\)/g, '$');
     
     DOM.explanationText.innerHTML =
       '<div style="background:' + statusColor + ';color:white;padding:8px 16px;border-radius:6px;display:inline-block;font-weight:700;margin-bottom:15px;">' +
@@ -1180,8 +1180,8 @@ function showExplanation() {
   var isCorrect = (ans === displayAnswerIndex);
   var statusColor = isCorrect ? '#27ae60' : '#e74c3c';
   
+  // ★★★★★ 설명 텍스트 변환 없이 raw 그대로 ★★★★★
   var explanationText = q.explanation || LANG.noExplanation;
-  explanationText = explanationText.replace(/\\\(/g, '$').replace(/\\\)/g, '$');
   
   DOM.explanationText.innerHTML =
     '<div style="background:' + statusColor + ';color:white;padding:8px 16px;border-radius:6px;display:inline-block;font-weight:700;margin-bottom:15px;">' +
@@ -1198,8 +1198,7 @@ function showExplanation() {
   }
 }
 
-// ★★★★★ 중요: 기존 renderCurrentQuestion을 새로운 함수로 덮어쓰기 ★★★★★
-// 이렇게 하면 중복 선언 오류 없이 기존 함수가 새 함수로 대체됩니다.
+// ★★★★★ 기존 renderCurrentQuestion을 새로운 함수로 덮어쓰기 ★★★★★
 renderCurrentQuestion = renderCurrentQuestionNew;
 
 
