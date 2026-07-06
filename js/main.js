@@ -709,124 +709,20 @@ function resumeProgress(saved) {
 // 1400 - initialize
 // ============================================================
 // ============================================================
-// 1400 - initialize 함수 (최종 수정)
+// 1400 - initialize 함수 (수정)
 // ============================================================
 function initialize() {
-  DOM.setupSection = document.getElementById('setupSection');
-  DOM.quizMain = document.getElementById('quizMain');
-  DOM.quizContent = document.getElementById('quizContent');
-  DOM.startNumberInput = document.getElementById('startNumber');
-  DOM.startQuizBtn = document.getElementById('startQuizBtn');
-  DOM.maxNumberSpan = document.getElementById('maxNumber');
-  DOM.progressText = document.getElementById('progressText');
-  DOM.quizProgressBar = document.getElementById('quizProgressBar');
-  DOM.questionContainer = document.getElementById('questionContainer');
-  DOM.explanationBox = document.getElementById('explanationBox');
-  DOM.explanationText = document.getElementById('explanationText');
-  DOM.prevBtn = document.getElementById('prevBtn');
-  DOM.nextBtn = document.getElementById('nextBtn');
-  DOM.skipBtn = document.getElementById('skipBtn');
-  DOM.submitBtn = document.getElementById('submitBtn');
-  DOM.quitBtn = document.getElementById('quitBtn');
-  DOM.resultModal = document.getElementById('resultModal');
-  DOM.correctCountSpan = document.getElementById('correctCount');
-  DOM.accuracyRateSpan = document.getElementById('accuracyRate');
-  DOM.resultGrid = document.getElementById('resultGrid');
-  DOM.retryAllBtn = document.getElementById('retryAllBtn');
-  DOM.reviewWrongBtn = document.getElementById('reviewWrongBtn');
-  DOM.closeModalBtn = document.getElementById('closeModalBtn');
-  DOM.wrongModal = document.getElementById('wrongModal');
-  DOM.wrongListDiv = document.getElementById('wrongList');
-  DOM.closeWrongBtn = document.getElementById('closeWrongBtn');
-  DOM.retryWrongFromReviewBtn = document.getElementById('retryWrongFromReviewBtn');
-  DOM.reviewBanner = document.getElementById('reviewBanner');
-  DOM.savedBadgeContainer = document.getElementById('savedBadgeContainer');
-  DOM.loadNextContainer = document.getElementById('loadNextContainer');
-  DOM.mainContainer = document.getElementById('mainContainer');
-  DOM.maxNumberDisplay = document.getElementById('maxNumberDisplay');
-  DOM.setSelector = document.getElementById('setSelector');
-  DOM.progressArea = document.querySelector('.progress-area');
-  if (!DOM.progressArea) DOM.progressArea = document.getElementById('progressArea');
+  // ... 기존 코드 ...
 
-  addSubjectSelector();
-  var subjectSelect = document.getElementById('subjectSelect');
-  if (subjectSelect) {
-    subjectSelect.addEventListener('change', function() { SELECTED_SUBJECT = this.value; updateSetSelectorForSubject(SELECTED_SUBJECT); });
+  // ✅ 로그인 화면 자동 표시 (추가)
+  var loginScreen = document.getElementById('loginScreen');
+  if (loginScreen) {
+    loginScreen.style.display = 'flex';
+  } else {
+    console.warn('⚠️ loginScreen 요소를 찾을 수 없음');
   }
 
-  initTimer();
-  updateSplash(10, '서버 연결 중...');
-
-  setTimeout(async function() {
-    try {
-      var totalQuestions = await detectTotalQuestions(SELECTED_SUBJECT || 'sat');
-      if (totalQuestions === 0) { TOTAL_QUESTIONS = 720; localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS)); }
-      updateSetSelectorForSubject(SELECTED_SUBJECT || 'sat');
-
-      var saved = loadProgress();
-      if (saved && saved.currentQuestions && saved.currentQuestions.length > 0) {
-        var answered = saved.userAnswers.filter(function(a) { return a !== null && a !== -1; }).length;
-        var timeStr = new Date(saved.timestamp).toLocaleString();
-        DOM.savedBadgeContainer.innerHTML = '<div class="resume-badge" id="resumeBadge"><div class="count">' + answered + ' / ' + saved.currentQuestions.length + ' answered</div><div class="time">' + timeStr + '</div><div class="hint">Click to resume</div></div>';
-        var resumeBadge = document.getElementById('resumeBadge');
-        if (resumeBadge) {
-          resumeBadge.addEventListener('click', function(e) { e.stopPropagation(); var savedData = loadProgress(); if (savedData) showProgressModal(savedData); });
-        }
-        var resumeCard = document.getElementById('resumeCard');
-        if (resumeCard) {
-          var newCard = resumeCard.cloneNode(true);
-          resumeCard.parentNode.replaceChild(newCard, resumeCard);
-          newCard.addEventListener('click', function() { var savedData = loadProgress(); if (savedData) showProgressModal(savedData); });
-        }
-      } else {
-        DOM.savedBadgeContainer.innerHTML = '<div class="no-session">No saved session<small>Start a new lesson</small></div>';
-      }
-
-      attachEvents();
-      updateSplash(100, 'Ready!');
-      
-      // ✅ 스플래시 직접 제어 (hideSplash 의존 제거)
-      setTimeout(function() {
-        var overlay = document.getElementById('splashOverlay');
-        if (overlay) {
-          overlay.style.opacity = '0';
-          setTimeout(function() {
-            overlay.style.display = 'none';
-            var main = document.getElementById('mainContainer');
-            if (main) main.style.display = 'block';
-            console.log('✅ 스플래시 숨김 완료 (from initialize)');
-          }, 500);
-        } else {
-          var main = document.getElementById('mainContainer');
-          if (main) main.style.display = 'block';
-        }
-      }, 400);
-      
-      setTimeout(function() {
-        if (DOM.startNumberInput) {
-          DOM.startNumberInput.focus();
-          DOM.startNumberInput.select();
-        }
-      }, 600);
-      
-      console.log('✅ Initialization complete: ' + TOTAL_QUESTIONS + ' total questions');
-    } catch(e) {
-      console.error('Initialization error:', e);
-      showSplashError(e.message || 'Initialization failed');
-      // 에러 시에도 스플래시 강제 숨김
-      setTimeout(function() {
-        var overlay = document.getElementById('splashOverlay');
-        if (overlay) {
-          overlay.style.opacity = '0';
-          setTimeout(function() {
-            overlay.style.display = 'none';
-            var main = document.getElementById('mainContainer');
-            if (main) main.style.display = 'block';
-          }, 500);
-        }
-      }, 1000);
-    }
-  }, 300);
+  // ... 나머지 코드 ...
 }
 
 // ============================================================
