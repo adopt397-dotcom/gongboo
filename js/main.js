@@ -810,6 +810,7 @@ function updateSetSelectorForSubject(subject) {
 // (기존 window.xxx = xxx; export {...} 유지)
 
 // ============================================================
+// 9950 - 회원// ============================================================
 // 9950 - 회원관리 내보내기 (신규)
 // ============================================================
 window.handleLogin = handleLogin;
@@ -821,22 +822,40 @@ window.loadSubjects = loadSubjects;
 window.checkAutoLogin = checkAutoLogin;
 
 // ============================================================
-// 9999 - 초기 실행 (자동 로그인 체크)
+// 9999 - 최종 내보내기 (기존 + 회원관리)
 // ============================================================
-(function() {
-  // 기존 Splash 유지, 로그인 체크 추가
-  document.addEventListener('DOMContentLoaded', function() {
-    var saved = checkAutoLogin();
-    if (saved) {
-      // 자동 로그인 성공 → 바로 앱 시작
-      loadSubjects().then(function() {
-        startApp();
-      });
-    } else {
-      // 로그인 필요
-      showLoginScreen();
-    }
-  });
-})();
 
-console.log('✅ main.js loaded with member management');
+// 기존 함수들 export
+export {
+  initialize,
+  startQuizWithNumber,
+  renderGraphic,
+  renderCurrentQuestion,
+  showExplanation,
+  goNext,
+  goPrev,
+  skipQuestion,
+  submitSubjective,
+  showResults,
+  showWrongAnswersList,
+  startWrongOnlyReview,
+  saveProgress,
+  loadProgress,
+  clearProgress
+};
+
+// 회원관리 함수들 export
+export {
+  handleLogin,
+  handleRegister,
+  showRegisterUI,
+  showLoginScreen,
+  logout,
+  loadSubjects,
+  checkAutoLogin,
+  startApp
+};
+
+// ============================================================
+// 파일 끝 (EOF)  ← 여기서 끝! 아무것도 없음
+// ============================================================
