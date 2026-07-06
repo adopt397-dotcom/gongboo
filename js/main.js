@@ -46,45 +46,23 @@ var SUBJECTS_LIST = [];
 var SUBJECTS_LOADED = false;
 
 // ============================================================
-// 0300 - doPost (CORS 헤더 추가)
+// 0300 - 기존 전역 변수
 // ============================================================
-function doPost(e) {
-  // CORS 헤더 설정
-  var output = ContentService
-    .createTextOutput()
-    .setMimeType(ContentService.MimeType.JSON);
-
-  try {
-    var body = JSON.parse(e.postData.contents);
-    var action = body.action;
-
-    var response;
-    if (action === 'login') {
-      response = handleLogin(body.email, body.pin);
-    } else if (action === 'register') {
-      response = handleRegister(body.email, body.pin, body.name);
-    } else if (action === 'subjects') {
-      response = handleGetSubjects();
-    } else {
-      response = createResponse(false, 'Unknown action: ' + action);
-    }
-
-    output.setContent(JSON.stringify(response));
-
-  } catch (error) {
-    output.setContent(JSON.stringify({
-      success: false,
-      message: 'Server error: ' + error.message
-    }));
-  }
-
-  // CORS 허용 헤더 추가
-  output.setHeader('Access-Control-Allow-Origin', '*');
-  output.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  output.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  return output;
-}
+var STORAGE_KEY = 'quiz_progress_main';
+var TOTAL_CACHE_KEY = 'quiz_total_questions';
+var QUESTIONS_PER_SET = 120;
+var TOTAL_QUESTIONS = 0;
+var masterQuestions = [];
+var currentQuestions = [];
+var userAnswers = [];
+var currentIndex = 0;
+var correctCount = 0;
+var isReviewMode = false;
+var originalQuestions = [];
+var currentStartNumber = 1;
+var autoSaveInterval = null;
+var chartInstances = {};
+var DOM = {};
 
 // ============================================================
 // 0400 - Splash 화면 함수
