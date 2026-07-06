@@ -896,11 +896,6 @@ function renderCurrentQuestion() {
 // MathJax 직접 렌더링 + 선택지 자동 LaTeX 변환 + 질문 텍스트 강제 변환
 // ============================================================
 
-// ============================================================
-// 1300 - 렌더링 함수 (renderSubjectiveQuestion, renderCurrentQuestion, showExplanation)
-// MathJax 직접 렌더링 + 선택지 자동 LaTeX 변환 + 질문 텍스트 강제 변환
-// ============================================================
-
 // ★★★★★ 자동 LaTeX 감싸기 함수 ★★★★★
 function autoWrapLatex(text) {
     if (!text) return text;
@@ -942,7 +937,6 @@ function renderSubjectiveQuestion(q, answered, headerText, passageHtml) {
     correctAnswerText = 'Answer not available';
   }
   
-  // ★★★★★ 질문 텍스트 LaTeX 변환 ★★★★★
   var questionDisplay = q.question || 'No question text';
   questionDisplay = questionDisplay.replace(/\\\(/g, '$').replace(/\\\)/g, '$');
   
@@ -974,7 +968,6 @@ function renderSubjectiveQuestion(q, answered, headerText, passageHtml) {
   html += '</div></div>';
   DOM.questionContainer.innerHTML = html;
 
-  // MathJax 렌더링 실행
   if (window.MathJax && MathJax.typesetPromise) {
     MathJax.typesetPromise([DOM.questionContainer]).catch(console.warn);
   }
@@ -996,6 +989,7 @@ function renderSubjectiveQuestion(q, answered, headerText, passageHtml) {
   DOM.prevBtn.disabled = (currentIndex === 0);
 }
 
+// ★★★★★ renderCurrentQuestion 함수 (단 한 번만 선언) ★★★★★
 function renderCurrentQuestion() {
   console.log('🔴 renderCurrentQuestion START');
   if (!currentQuestions.length || currentIndex >= currentQuestions.length) {
@@ -1045,7 +1039,6 @@ function renderCurrentQuestion() {
   }
   var displayAnswer = actualAnswerKey !== null ? validKeys.indexOf(actualAnswerKey) + 1 : parseInt(originalAnswerKey);
 
-  // ★★★★★ 질문 텍스트 LaTeX 변환 ★★★★★
   var questionDisplay = q.question || 'No question text';
   questionDisplay = questionDisplay.replace(/\\\(/g, '$').replace(/\\\)/g, '$');
   console.log('🔍 questionDisplay after conversion:', questionDisplay);
@@ -1080,7 +1073,6 @@ function renderCurrentQuestion() {
   DOM.questionContainer.innerHTML = html;
   console.log('✅ Question rendered');
 
-  // ★★★ MathJax로 LaTeX 렌더링 ★★★
   if (window.MathJax && MathJax.typesetPromise) {
     MathJax.typesetPromise([DOM.questionContainer])
       .then(function() {
@@ -1127,7 +1119,7 @@ function renderCurrentQuestion() {
   DOM.prevBtn.disabled = (currentIndex === 0);
 }
 
-// ★★★★★ showExplanation 함수 (반드시 필요!) ★★★★★
+// ★★★★★ showExplanation 함수 ★★★★★
 function showExplanation() {
   var q = currentQuestions[currentIndex];
   var ans = userAnswers[currentIndex];
