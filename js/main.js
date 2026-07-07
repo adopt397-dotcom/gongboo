@@ -1172,7 +1172,7 @@ function updateProgressDisplay() {
 // 9900 - 내보내기 (기존 + 회원관리)
 // ============================================================
 
-// window 객체에 노출
+// window 객체에 노출 (HTML onclick 등에서 사용)
 window.initialize = initialize;
 window.startQuizWithNumber = startQuizWithNumber;
 window.renderGraphic = renderGraphic;
@@ -1190,15 +1190,15 @@ window.loadProgress = loadProgress;
 window.clearProgress = clearProgress;
 
 window.handleLogin = handleLogin;
-window.handleRegister = handleRegister;    // ✅ 필수!
-window.showRegisterUI = showRegisterUI;
+window.handleRegister = handleRegister;
+window.showRegisterUI = showRegisterUI;      // ✅ 추가
 window.showLoginScreen = showLoginScreen;
 window.logout = logout;
 window.loadSubjects = loadSubjects;
-window.checkAutoLogin = checkAutoLogin;
+window.checkAutoLogin = checkAutoLogin;      // ✅ 추가 (함수가 정의되어 있어야 함)
 window.startApp = startApp;
 
-// ES Module export
+// ES Module export (import ... from ... 용)
 export {
   initialize,
   startQuizWithNumber,
