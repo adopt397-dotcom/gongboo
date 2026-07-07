@@ -210,7 +210,9 @@ async function handleRegister() {
       method: 'POST',
       body: JSON.stringify({ action: 'register', email, pin, name: name || email })
     });
+    console.log("📡 HTTP 상태:", res.status);
     var result = await res.json();
+    console.log("📡 응답 본문:", result);
     if (result.success) {
       msg.textContent = '✅ ' + result.message;
       msg.style.color = '#27ae60';
@@ -295,58 +297,21 @@ async function loadSubjects() {
 }
 
 // ============================================================
-// 0555 - checkAutoLogin (신규)
+// 0555 - getAccessibleSubjects (신규 추가)
 // ============================================================
-// ============================================================
-// 0650 - 회원관리: 회원가입 처리 (신규 추가)
-// ============================================================
-function handleRegister(email, pin, name) {
-  Logger.log('🔍 회원가입 시도: ' + email);
-  Logger.log('📝 데이터: email=' + email + ', pin=' + pin + ', name=' + name);
-
-  if (!email || !pin) {
-    Logger.log('❌ 이메일 또는 PIN 없음');
-    return createResponse(false, '이메일과 PIN은 필수입니다.');
+function getAccessibleSubjects() {
+  if (!CURRENT_USER || !CURRENT_USER.access_subjects) {
+    return SUBJECTS_LIST;
   }
 
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(MEMBER_SHEET);
-  if (!sheet) {
-    Logger.log('❌ members 시트 없음');
-    return createResponse(false, '회원 정보를 찾을 수 없습니다.');
+  try {
+    var accessList = JSON.parse(CURRENT_USER.access_subjects);
+    return SUBJECTS_LIST.filter(function(s) {
+      return accessList.indexOf(s.subject) !== -1;
+    });
+  } catch (e) {
+    return SUBJECTS_LIST;
   }
-
-  // 중복 확인
-  var data = sheet.getDataRange().getValues();
-  for (var i = 1; i < data.length; i++) {
-    if (data[i][1] === email) {
-      Logger.log('❌ 중복 이메일: ' + email);
-      return createResponse(false, '이미 등록된 이메일입니다.');
-    }
-  }
-
-  // 새 회원 추가 (id는 안전하게 생성)
-  var now = new Date();
-  var newId = sheet.getLastRow() + 1;
-
-  sheet.appendRow([
-    newId,              // A: id
-    email,              // B: email
-    pin,                // C: pin
-    name || email,      // D: name
-    'none',             // E: payment_status
-    '',                 // F: payment_date
-    '',                 // G: expired_date
-    now,                // H: created_at
-    '',                 // I: last_login
-    '',                 // J: memo
-    '["sat"]',          // K: access_subjects
-    '',                 // L: session_token
-    'personal',         // M: account_type
-    1                   // N: max_sessions
-  ]);
-
-  Logger.log('✅ 회원가입 성공: ' + email);
-  return createResponse(true, '회원가입이 완료되었습니다.');
 }
 
 // ============================================================
