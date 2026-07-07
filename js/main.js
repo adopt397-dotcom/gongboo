@@ -1105,6 +1105,7 @@ function renderGraphic(jsonData) {
   return html;
 }
 
+
 // ============================================================
 // 1800 - startApp (로그인 후 실행 - 즉시 설정 화면 표시)
 // ============================================================
@@ -1115,7 +1116,14 @@ function startApp() {
   var loginScreen = document.getElementById('loginScreen');
   if (loginScreen) loginScreen.remove();
 
-  // ✅ 즉시 설정 화면 표시 (데이터 로딩과 별개로)
+  // ✅ 메인 컨테이너 즉시 표시
+  var mainContainer = document.getElementById('mainContainer');
+  if (mainContainer) {
+    mainContainer.style.display = 'block';
+    console.log("✅ 메인 컨테이너 표시");
+  }
+
+  // ✅ 즉시 설정 화면 표시
   var setupSection = document.getElementById('setupSection');
   if (setupSection) {
     setupSection.style.display = 'block';
@@ -1132,12 +1140,10 @@ function startApp() {
     overlay.style.opacity = '0';
     setTimeout(function() {
       overlay.style.display = 'none';
-      var main = document.getElementById('mainContainer');
-      if (main) main.style.display = 'block';
     }, 500);
   }
 
-  // initialize는 백그라운드에서 실행 (데이터 로딩)
+  // initialize는 백그라운드에서 실행
   initialize().then(function() {
     console.log("✅ initialize 백그라운드 완료");
   }).catch(function(err) {
@@ -1146,6 +1152,8 @@ function startApp() {
 
   console.log("✅ startApp 완료 (설정 화면 표시됨)");
 }
+
+
 // ============================================================
 // 1900 - updateProgressDisplay
 // ============================================================
