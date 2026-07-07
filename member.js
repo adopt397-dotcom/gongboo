@@ -216,7 +216,7 @@ function createModal(id, title, content) {
 }
 
 // ============================================================
-// BLOCK 0600: 세션 확인 (SESSION)
+// BLOCK 0600: 세션 확인 (SESSION) - 수정 완료
 // ============================================================
 function checkSession() {
   const saved = localStorage.getItem(STORAGE_KEY);
@@ -227,7 +227,8 @@ function checkSession() {
         currentToken = data.token;
         currentUser = data.user;
         updateUI(true);
-        verifyToken();
+        // verifyToken() 호출 제거 (로그인 직후에는 생략)
+        // verifyToken();
         return;
       }
     } catch(e) {}
@@ -245,10 +246,14 @@ function verifyToken() {
         updateUI(true);
         enableQuiz(true);
       } else {
-        logout();
+        // 에러가 나도 로그아웃하지 않고, 그냥 현재 상태 유지
+        console.warn('⚠️ 토큰 검증 실패, 하지만 로그인 상태는 유지합니다.');
       }
     })
-    .catch(() => {});
+    .catch(err => {
+      // 네트워크 오류도 로그아웃하지 않음
+      console.warn('⚠️ 토큰 검증 중 네트워크 오류:', err);
+    });
 }
 
 // ============================================================
