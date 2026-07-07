@@ -1187,15 +1187,15 @@ window.saveProgress = saveProgress;
 window.loadProgress = loadProgress;
 window.clearProgress = clearProgress;
 
-window.handleLogin = handleLogin;
-window.handleRegister = handleRegister;
+window.handleLogin = handleLogin;        // ✅ 반드시 있어야 함
+window.handleRegister = handleRegister;  // ✅ 반드시 있어야 함
 window.showRegisterUI = showRegisterUI;
 window.showLoginScreen = showLoginScreen;
 window.logout = logout;
 window.loadSubjects = loadSubjects;
 window.startApp = startApp;
 
-// ES Module export (checkAutoLogin 제거)
+// ES Module export
 export {
   initialize,
   startQuizWithNumber,
