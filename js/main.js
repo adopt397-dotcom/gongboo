@@ -1367,6 +1367,9 @@ function resumeProgress(saved) {
 }
 
 function initialize() {
+   if (typeof initMemberSystem === 'function') {
+    initMemberSystem();
+  }
   DOM.setupSection = document.getElementById('setupSection');
   DOM.quizMain = document.getElementById('quizMain');
   DOM.quizContent = document.getElementById('quizContent');
@@ -1491,6 +1494,14 @@ function initialize() {
 // 1500 - startQuizWithNumber 함수
 // ============================================================
 async function startQuizWithNumber(uiStartNumber) {
+  // ★ 여기에 이 6줄을 추가하세요 ★
+  if (typeof isUserAuthorized === 'function' && !isUserAuthorized()) {
+    alert('로그인 또는 구독이 필요합니다.');
+    if (typeof showLoginModal === 'function') {
+      showLoginModal();
+    }
+    return;
+  }
   if (isNaN(uiStartNumber) || uiStartNumber < 1) uiStartNumber = 1;
   if (uiStartNumber > TOTAL_QUESTIONS) {
     console.log('🔄 Number ' + uiStartNumber + ' exceeds total ' + TOTAL_QUESTIONS + '. Looping back to 1.');
