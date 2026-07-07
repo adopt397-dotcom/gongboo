@@ -26,15 +26,12 @@ var LANG = {
 };
 
 // ============================================================
-// 0100 - 기존 LANG (생략 가능 - 필요시 병합)
-// ============================================================
-
-// ============================================================
 // 0200 - API URL
 // ============================================================
 var API_URL = "https://script.google.com/macros/s/AKfycbyGheuDiRefHdQxqScJnaWi0Fqm0gTswRXJEkmIF1NNUqhVcD-Z9-Iz9fGrXGBcm95tTA/exec";
 var ORIGINAL_API_URL = API_URL;
 var MEMBER_API_URL = API_URL;
+
 // ============================================================
 // 0250 - 회원관리 상수
 // ============================================================
@@ -90,9 +87,6 @@ function hideSplash() {
 }
 
 // ============================================================
-// 0450 - 로그인/회원가입 UI
-// ============================================================
-// ============================================================
 // 0450 - 로그인/회원가입 UI (headers 제거 + 에러 로그 강화)
 // ============================================================
 function showLoginScreen() {
@@ -144,6 +138,7 @@ async function handleLogin() {
     var res = await fetch(MEMBER_API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'login', email, pin })
+      // 헤더 없음 → preflight 방지
     });
     var result = await res.json();
     if (result.success) {
@@ -208,6 +203,7 @@ async function handleRegister() {
     var res = await fetch(MEMBER_API_URL, {
       method: 'POST',
       body: JSON.stringify({ action: 'register', email, pin, name: name || email })
+      // 헤더 없음 → preflight 방지
     });
     console.log("📡 HTTP 상태:", res.status);
     var result = await res.json();
@@ -251,9 +247,8 @@ function randomizeChoicesOnly(q) {
 }
 
 // ============================================================
-// 0550 - 회원관리 유틸리티
+// 0550 - loadSubjects (POST, 헤더 없음, preflight 방지)
 // ============================================================
-
 async function loadSubjects() {
   console.log("🔍 loadSubjects 시작");
 
@@ -263,12 +258,10 @@ async function loadSubjects() {
   }
 
   try {
-    const url = "https://script.google.com/macros/s/AKfycbwYnCi7myER0R4djAV7CLW9Y1aTa-mjFSk_y_8vcD_p8vN78Sr5JeUB0WEqJR0_OTuG/exec?action=subjects";
-    console.log("🔍 fetch URL (GET):", url);
-
-    // 🔥 GET 방식 사용 (preflight 발생 안 함)
-    const response = await fetch(url, {
-      method: "GET"
+    const response = await fetch(MEMBER_API_URL, {
+      method: 'POST',
+      body: JSON.stringify({ action: 'subjects' })
+      // Content-Type 헤더를 보내지 않아 preflight가 발생하지 않음
     });
 
     console.log("✅ response 상태:", response.status);
@@ -296,7 +289,7 @@ async function loadSubjects() {
 }
 
 // ============================================================
-// 0555 - getAccessibleSubjects (신규 추가)
+// 0555 - getAccessibleSubjects (신규)
 // ============================================================
 function getAccessibleSubjects() {
   if (!CURRENT_USER || !CURRENT_USER.access_subjects) {
@@ -314,7 +307,7 @@ function getAccessibleSubjects() {
 }
 
 // ============================================================
-// 0556 - logout (신규)
+// 0556 - logout
 // ============================================================
 function logout() {
   if (confirm('로그아웃 하시겠습니까?')) {
@@ -323,7 +316,6 @@ function logout() {
     window.location.reload();
   }
 }
-
 
 // ============================================================
 // 0600 - 자동저장
@@ -760,9 +752,8 @@ function resumeProgress(saved) {
   renderCurrentQuestion();
 }
 
-
 // ============================================================
-// 1350 - updateSetSelectorForSubject (신규 추가)
+// 1350 - updateSetSelectorForSubject
 // ============================================================
 function updateSetSelectorForSubject(subject) {
   var setSelector = document.getElementById('setSelector');
@@ -800,15 +791,14 @@ function updateSetSelectorForSubject(subject) {
   if (DOM.startNumberInput) DOM.startNumberInput.value = '1';
 }
 
-
 // ============================================================
-// 1400 - initialize (로그인 후 초기화 - 수정)
+// 1400 - initialize
 // ============================================================
 async function initialize() {
   console.log("🚀 initialize 시작");
 
   try {
-    // 1. DOM 연결
+    // DOM 연결
     DOM.setupSection = document.getElementById('setupSection');
     DOM.quizMain = document.getElementById('quizMain');
     DOM.quizContent = document.getElementById('quizContent');
@@ -847,7 +837,7 @@ async function initialize() {
 
     console.log("✅ DOM 연결 완료");
 
-    // 2. 과목 선택 이벤트
+    // 과목 선택 이벤트
     var subjectSelect = document.getElementById('subjectSelect');
     if (subjectSelect) {
       subjectSelect.addEventListener('change', function() {
@@ -857,26 +847,26 @@ async function initialize() {
     }
     console.log("✅ 과목 선택 이벤트 연결 완료");
 
-    // 3. 타이머 초기화
+    // 타이머 초기화
     initTimer();
     updateSplash(10, '서버 연결 중...');
     console.log("✅ 타이머 초기화 완료");
 
-    // 4. 과목 목록 로드
+    // 과목 목록 로드
     console.log("🔍 loadSubjects 호출 시작");
     await loadSubjects();
     console.log("✅ loadSubjects 완료");
 
-    // 5. 총 문제수 확인
+    // 총 문제수 확인
     console.log("🔍 detectTotalQuestions 호출 시작");
     await detectTotalQuestions(SELECTED_SUBJECT || 'sat');
     console.log("✅ detectTotalQuestions 완료: " + TOTAL_QUESTIONS);
 
-    // 6. Set 선택기 업데이트
+    // Set 선택기 업데이트
     updateSetSelectorForSubject(SELECTED_SUBJECT || 'sat');
     console.log("✅ Set 선택기 업데이트 완료");
 
-    // 7. 저장된 진행 상황 확인
+    // 저장된 진행 상황 확인
     var saved = loadProgress();
     if (saved && saved.currentQuestions && saved.currentQuestions.length > 0) {
       var answered = saved.userAnswers.filter(function(a) { return a !== null && a !== -1; }).length;
@@ -909,15 +899,15 @@ async function initialize() {
     }
     console.log("✅ 진행 상황 확인 완료");
 
-    // 8. 이벤트 연결
+    // 이벤트 연결
     attachEvents();
     console.log("✅ 이벤트 연결 완료");
 
-    // 9. 스플래시 숨기기 (100%)
+    // 스플래시 100%
     updateSplash(100, 'Ready!');
     console.log("✅ 스플래시 100%");
 
-    // 10. 설정 화면 표시 (로그인 후)
+    // 설정 화면 표시
     if (DOM.setupSection) {
       DOM.setupSection.style.display = 'block';
       console.log("✅ 설정 화면 표시");
@@ -926,7 +916,7 @@ async function initialize() {
       DOM.quizMain.style.display = 'none';
     }
 
-    // 11. 스플래시 제거
+    // 스플래시 제거
     var overlay = document.getElementById('splashOverlay');
     if (overlay) {
       overlay.style.opacity = '0';
@@ -944,7 +934,7 @@ async function initialize() {
     console.error("❌ initialize 오류:", e);
     console.error(e.stack);
 
-    // 오류 시에도 설정 화면은 표시
+    // 오류 시에도 설정 화면 표시
     if (DOM.setupSection) {
       DOM.setupSection.style.display = 'block';
     }
@@ -974,7 +964,6 @@ function showLoadingOverlay(text) {
   document.body.appendChild(overlay);
   return overlay;
 }
-
 function hideLoadingOverlay() {
   var overlay = document.getElementById('loadingOverlay');
   if (overlay) overlay.remove();
@@ -1109,25 +1098,23 @@ function renderGraphic(jsonData) {
   return html;
 }
 
-
 // ============================================================
 // 1800 - startApp (로그인 후 실행 - 즉시 설정 화면 표시)
 // ============================================================
 function startApp() {
   console.log("🚀 startApp 실행");
 
-  // 로그인 화면 제거
   var loginScreen = document.getElementById('loginScreen');
   if (loginScreen) loginScreen.remove();
 
-  // ✅ 메인 컨테이너 즉시 표시
+  // 메인 컨테이너 즉시 표시
   var mainContainer = document.getElementById('mainContainer');
   if (mainContainer) {
     mainContainer.style.display = 'block';
     console.log("✅ 메인 컨테이너 표시");
   }
 
-  // ✅ 즉시 설정 화면 표시 (데이터 로딩과 별개로)
+  // 설정 화면 즉시 표시
   var setupSection = document.getElementById('setupSection');
   if (setupSection) {
     setupSection.style.display = 'block';
@@ -1147,7 +1134,7 @@ function startApp() {
     }, 500);
   }
 
-  // initialize는 백그라운드에서 실행 (데이터 로딩)
+  // initialize는 백그라운드 실행
   initialize().then(function() {
     console.log("✅ initialize 백그라운드 완료");
   }).catch(function(err) {
@@ -1156,7 +1143,6 @@ function startApp() {
 
   console.log("✅ startApp 완료 (설정 화면 표시됨)");
 }
-
 
 // ============================================================
 // 1900 - updateProgressDisplay
@@ -1173,8 +1159,6 @@ function updateProgressDisplay() {
 // ============================================================
 // 9900 - 내보내기 (기존 + 회원관리)
 // ============================================================
-
-// window 객체에 노출
 window.initialize = initialize;
 window.startQuizWithNumber = startQuizWithNumber;
 window.renderGraphic = renderGraphic;
@@ -1191,15 +1175,14 @@ window.saveProgress = saveProgress;
 window.loadProgress = loadProgress;
 window.clearProgress = clearProgress;
 
-window.handleLogin = handleLogin;        // ✅ 반드시 있어야 함
-window.handleRegister = handleRegister;  // ✅ 반드시 있어야 함
+window.handleLogin = handleLogin;
+window.handleRegister = handleRegister;
 window.showRegisterUI = showRegisterUI;
 window.showLoginScreen = showLoginScreen;
 window.logout = logout;
 window.loadSubjects = loadSubjects;
 window.startApp = startApp;
 
-// ES Module export
 export {
   initialize,
   startQuizWithNumber,
