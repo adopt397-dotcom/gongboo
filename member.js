@@ -1,19 +1,15 @@
 // ============================================================
-// member.js - SAT 퀴즈 회원 관리 프론트엔드
-// 설명: 로그인/회원가입/프로필/관리자 UI 및 API 통신
+// BLOCK 0000: 설정 (CONFIG)
 // ============================================================
-
-// ---- 1. 설정 ----
 const MEMBER_API_URL = 'https://script.google.com/macros/s/AKfycby9g0f27gyjUuHdnw9-tZxr8Qmhbdm_864Ons0Ai6h1z87LOf0nYZBdWlAiJ_lgnpyB/exec';
-// ⚠️ 위 URL은 본인 GAS 배포 URL로 정확히 설정되었습니다.
-
 const STORAGE_KEY = 'sat_member_session';
 
-// ---- 2. 상태 관리 ----
+// ============================================================
+// BLOCK 0100: 상태 관리 (STATE)
+// ============================================================
 let currentUser = null;
 let currentToken = null;
 
-// ---- 3. DOM 요소 (동적 생성) ----
 let memberUI = {
   statusBar: null,
   loginModal: null,
@@ -22,7 +18,9 @@ let memberUI = {
   adminModal: null
 };
 
-// ---- 4. 초기화 함수 (main.js가 호출) ----
+// ============================================================
+// BLOCK 0200: 초기화 함수 (INIT)
+// ============================================================
 function initMemberSystem() {
   console.log('🔐 회원 시스템 초기화 중...');
   createStatusBar();
@@ -30,11 +28,14 @@ function initMemberSystem() {
   checkSession();
 }
 
-// ---- 5. 상단 상태바 생성 ----
+// ============================================================
+// BLOCK 0300: 상단 상태바 생성 (STATUS BAR) - 수정 완료
+// ============================================================
 function createStatusBar() {
-  // 기존 헤더 아래에 상태바 추가
+  console.log('📍 createStatusBar 실행 중...');
+  
+  // 헤더 찾기 (없으면 body에 추가)
   const header = document.querySelector('.quiz-header');
-  if (!header) return;
   
   const bar = document.createElement('div');
   bar.id = 'userStatusBar';
@@ -49,6 +50,8 @@ function createStatusBar() {
     font-size: 14px;
     flex-wrap: wrap;
     gap: 10px;
+    width: 100%;
+    box-sizing: border-box;
   `;
   bar.innerHTML = `
     <div id="userInfo" style="display:flex;align-items:center;gap:10px;">
@@ -63,8 +66,16 @@ function createStatusBar() {
       <button id="adminBtn" class="btn-sm" style="display:none;background:#e67e22;border:none;color:#fff;padding:6px 16px;border-radius:8px;cursor:pointer;font-weight:600;margin-left:6px;">⚙️ 관리자</button>
     </div>
   `;
-  header.parentNode.insertBefore(bar, header.nextSibling);
-  
+
+  // 헤더가 있으면 그 다음에, 없으면 body 맨 앞에 삽입
+  if (header) {
+    header.parentNode.insertBefore(bar, header.nextSibling);
+    console.log('✅ 상태바를 헤더 다음에 삽입함');
+  } else {
+    document.body.insertBefore(bar, document.body.firstChild);
+    console.log('✅ 상태바를 body 맨 앞에 삽입함');
+  }
+
   // 버튼 이벤트 연결
   document.getElementById('loginBtn').addEventListener('click', showLoginModal);
   document.getElementById('registerBtn').addEventListener('click', showRegisterModal);
@@ -73,9 +84,12 @@ function createStatusBar() {
   document.getElementById('adminBtn').addEventListener('click', showAdminModal);
   
   memberUI.statusBar = bar;
+  console.log('✅ createStatusBar 완료!');
 }
 
-// ---- 6. 모달 생성 ----
+// ============================================================
+// BLOCK 0400: 모달 생성 (MODALS)
+// ============================================================
 function createModals() {
   // 로그인 모달
   const loginModal = createModal('loginModal', '로그인', `
@@ -162,7 +176,9 @@ function createModals() {
   });
 }
 
-// ---- 7. 모달 생성 헬퍼 ----
+// ============================================================
+// BLOCK 0500: 모달 생성 헬퍼 (MODAL HELPER)
+// ============================================================
 function createModal(id, title, content) {
   const div = document.createElement('div');
   div.id = id;
@@ -190,7 +206,9 @@ function createModal(id, title, content) {
   return div;
 }
 
-// ---- 8. 세션 확인 및 복원 ----
+// ============================================================
+// BLOCK 0600: 세션 확인 (SESSION)
+// ============================================================
 function checkSession() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (saved) {
@@ -200,7 +218,6 @@ function checkSession() {
         currentToken = data.token;
         currentUser = data.user;
         updateUI(true);
-        // 토큰 유효성 검증 (백엔드에 profile 요청)
         verifyToken();
         return;
       }
@@ -219,16 +236,15 @@ function verifyToken() {
         updateUI(true);
         enableQuiz(true);
       } else {
-        // 토큰 만료 또는 무효
         logout();
       }
     })
-    .catch(() => {
-      // 네트워크 오류 시에도 일단 로그인 상태 유지 (오프라인 대비)
-    });
+    .catch(() => {});
 }
 
-// ---- 9. UI 업데이트 ----
+// ============================================================
+// BLOCK 0700: UI 업데이트 (UI UPDATE)
+// ============================================================
 function updateUI(loggedIn) {
   const loginBtn = document.getElementById('loginBtn');
   const registerBtn = document.getElementById('registerBtn');
@@ -243,11 +259,7 @@ function updateUI(loggedIn) {
     registerBtn.style.display = 'none';
     logoutBtn.style.display = 'inline-block';
     profileBtn.style.display = 'inline-block';
-    if (currentUser.account_type === 'admin') {
-      adminBtn.style.display = 'inline-block';
-    } else {
-      adminBtn.style.display = 'none';
-    }
+    adminBtn.style.display = currentUser.account_type === 'admin' ? 'inline-block' : 'none';
     userName.textContent = currentUser.name || currentUser.email;
     userStatus.textContent = currentUser.payment_status === 'active' ? '✅ 구독중' : '⏳ ' + currentUser.payment_status;
     userStatus.style.color = currentUser.payment_status === 'active' ? '#2ecc71' : '#f39c12';
@@ -265,7 +277,9 @@ function updateUI(loggedIn) {
   }
 }
 
-// ---- 10. 퀴즈 활성화/비활성화 (main.js와 연동) ----
+// ============================================================
+// BLOCK 0800: 퀴즈 활성화 (ENABLE QUIZ)
+// ============================================================
 function enableQuiz(enabled) {
   const startBtn = document.getElementById('startQuizBtn');
   const startInput = document.getElementById('startNumber');
@@ -275,17 +289,15 @@ function enableQuiz(enabled) {
     startBtn.disabled = !enabled;
     startBtn.style.opacity = enabled ? '1' : '0.5';
     startBtn.style.cursor = enabled ? 'pointer' : 'not-allowed';
-    if (!enabled) {
-      startBtn.title = '로그인 후 이용 가능합니다';
-    } else {
-      startBtn.title = '';
-    }
+    startBtn.title = enabled ? '' : '로그인 후 이용 가능합니다';
   }
   if (startInput) startInput.disabled = !enabled;
   if (setSelector) setSelector.disabled = !enabled;
 }
 
-// ---- 11. API 호출 함수 ----
+// ============================================================
+// BLOCK 0900: API 호출 (API CALL)
+// ============================================================
 function callAPI(action, params = {}) {
   const url = MEMBER_API_URL;
   const formData = new URLSearchParams();
@@ -310,7 +322,9 @@ function callAPI(action, params = {}) {
   });
 }
 
-// ---- 12. 로그인 ----
+// ============================================================
+// BLOCK 1000: 로그인 (LOGIN)
+// ============================================================
 function handleLogin() {
   const email = document.getElementById('loginEmail').value.trim();
   const pin = document.getElementById('loginPin').value.trim();
@@ -335,7 +349,6 @@ function handleLogin() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: currentToken, user: currentUser }));
         updateUI(true);
         document.getElementById('loginModal').style.display = 'none';
-        // 로그인 성공 후 START 버튼 활성화
         enableQuiz(true);
         alert('✅ ' + currentUser.name + '님, 환영합니다!');
       }
@@ -350,7 +363,9 @@ function handleLogin() {
     });
 }
 
-// ---- 13. 회원가입 ----
+// ============================================================
+// BLOCK 1100: 회원가입 (REGISTER)
+// ============================================================
 function handleRegister() {
   const name = document.getElementById('regName').value.trim();
   const email = document.getElementById('regEmail').value.trim();
@@ -379,7 +394,6 @@ function handleRegister() {
       if (res.status === 'success') {
         alert('✅ ' + res.message);
         document.getElementById('registerModal').style.display = 'none';
-        // 회원가입 후 로그인 모달 열기
         showLoginModal();
       }
     })
@@ -393,20 +407,23 @@ function handleRegister() {
     });
 }
 
-// ---- 14. 로그아웃 ----
+// ============================================================
+// BLOCK 1200: 로그아웃 (LOGOUT)
+// ============================================================
 function logout() {
   if (confirm('로그아웃 하시겠습니까?')) {
     localStorage.removeItem(STORAGE_KEY);
     currentToken = null;
     currentUser = null;
     updateUI(false);
-    // 모든 모달 닫기
     document.querySelectorAll('.modal-overlay').forEach(el => el.style.display = 'none');
     alert('로그아웃 되었습니다.');
   }
 }
 
-// ---- 15. 프로필 보기 ----
+// ============================================================
+// BLOCK 1300: 프로필 (PROFILE)
+// ============================================================
 function showProfileModal() {
   if (!currentUser) return;
   const modal = document.getElementById('profileModal');
@@ -421,7 +438,6 @@ function showProfileModal() {
   modal.style.display = 'flex';
 }
 
-// ---- 16. 프로필 수정 ----
 function handleUpdateProfile() {
   const newPin = document.getElementById('newPin').value.trim();
   const newName = document.getElementById('newName').value.trim();
@@ -458,7 +474,6 @@ function handleUpdateProfile() {
       msgEl.textContent = '✅ 정보가 수정되었습니다.';
       msgEl.style.color = '#27ae60';
       msgEl.style.display = 'block';
-      // 현재 유저 정보 갱신
       return callAPI('profile', { token: currentToken });
     })
     .then(res => {
@@ -466,7 +481,6 @@ function handleUpdateProfile() {
         currentUser = res.user;
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: currentToken, user: currentUser }));
         updateUI(true);
-        // 프로필 모달 내용 갱신
         document.getElementById('profName').textContent = currentUser.name;
       }
     })
@@ -481,7 +495,6 @@ function handleUpdateProfile() {
     });
 }
 
-// ---- 17. 회원 탈퇴 ----
 function handleDeleteAccount() {
   if (!confirm('정말로 탈퇴하시겠습니까? 모든 데이터가 삭제되지는 않지만 계정이 비활성화됩니다.')) return;
   if (!confirm('마지막 확인: 탈퇴하시겠습니까?')) return;
@@ -507,7 +520,9 @@ function handleDeleteAccount() {
     });
 }
 
-// ---- 18. 모달 표시 함수 ----
+// ============================================================
+// BLOCK 1400: 모달 표시 (SHOW MODALS)
+// ============================================================
 function showLoginModal() {
   document.getElementById('loginModal').style.display = 'flex';
   document.getElementById('loginEmail').focus();
@@ -520,7 +535,9 @@ function showRegisterModal() {
   document.getElementById('registerError').style.display = 'none';
 }
 
-// ---- 19. 관리자 기능 ----
+// ============================================================
+// BLOCK 1500: 관리자 (ADMIN)
+// ============================================================
 function showAdminModal() {
   if (!currentUser || currentUser.account_type !== 'admin') {
     alert('관리자 권한이 필요합니다.');
@@ -578,7 +595,6 @@ function loadAdminUsers() {
     });
 }
 
-// 관리자: 계정 정지/활성화 (전역 함수로 노출)
 window.adminSuspend = function(email, action) {
   if (!confirm(`'${email}' 님을 ${action === 'suspend' ? '정지' : '활성화'}하시겠습니까?`)) return;
   
@@ -586,7 +602,7 @@ window.adminSuspend = function(email, action) {
     .then(res => {
       if (res.status === 'success') {
         alert('✅ ' + res.message);
-        loadAdminUsers(); // 목록 새로고침
+        loadAdminUsers();
       }
     })
     .catch(err => {
@@ -594,8 +610,9 @@ window.adminSuspend = function(email, action) {
     });
 };
 
-// ---- 20. 외부에서 호출할 수 있는 공개 함수 ----
-// main.js가 호출하여 로그인 상태와 권한을 확인
+// ============================================================
+// BLOCK 1600: 공개 함수 (PUBLIC FUNCTIONS)
+// ============================================================
 function isUserAuthorized() {
   if (!currentUser) return false;
   if (currentUser.payment_status !== 'active') {
@@ -613,12 +630,13 @@ function isUserAuthorized() {
   return true;
 }
 
-// main.js가 호출하여 현재 사용자 정보를 얻음
 function getCurrentUser() {
   return currentUser;
 }
 
-// ---- 21. 전역 노출 ----
+// ============================================================
+// BLOCK 1700: 전역 노출 (GLOBAL EXPOSE)
+// ============================================================
 window.initMemberSystem = initMemberSystem;
 window.isUserAuthorized = isUserAuthorized;
 window.getCurrentUser = getCurrentUser;
