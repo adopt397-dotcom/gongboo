@@ -55,7 +55,7 @@ function checkAutoLogin() {
         if (!session) return false;
         const data = JSON.parse(session);
         if (Date.now() - data.timestamp < 7 * 24 * 60 * 60 * 1000) {
-            return data; // 세션 데이터 반환
+            return data;
         } else {
             localStorage.removeItem(SESSION_KEY);
         }
@@ -104,7 +104,6 @@ async function handleLogin() {
     btn.disabled = true;
 
     try {
-        // 🔥 headers: { 'Content-Type': 'application/json' } 제거 (preflight 방지)
         const response = await fetch(MEMBER_API_URL, {
             method: 'POST',
             body: JSON.stringify({ action: 'login', email, pin })
@@ -117,7 +116,7 @@ async function handleLogin() {
             saveSession(email, user.name, user.payment_status, user.access_subjects);
             msg.textContent = '✅ 로그인 성공!';
             msg.style.color = '#27ae60';
-            showQuizApp(); // main.js의 initialize 실행
+            showQuizApp();
         } else {
             msg.textContent = result.message || '이메일 또는 PIN이 일치하지 않습니다.';
             msg.style.color = '#e74c3c';
@@ -178,7 +177,6 @@ async function handleRegister() {
     if (btn) btn.disabled = true;
 
     try {
-        // 🔥 headers 제거 (preflight 방지)
         const response = await fetch(MEMBER_API_URL, {
             method: 'POST',
             body: JSON.stringify({ action: 'register', email, pin, name: name || email })
@@ -217,22 +215,18 @@ window.logout = logout;
 function initMember() {
     console.log("🚀 member.js 초기화 시작");
 
-    // 1. 로그인 화면 및 컨테이너 캐싱 (HTML에 없으면 생성)
     loginScreen = document.getElementById('loginScreen');
     setupSection = document.getElementById('setupSection');
     mainContainer = document.getElementById('mainContainer');
     splashOverlay = document.getElementById('splashOverlay');
 
-    // 2. 자동 로그인 체크
     const session = checkAutoLogin();
 
     if (session) {
         console.log("✅ 자동 로그인 성공:", session.email);
-        // main.js가 로드될 때까지 대기 (main.js가 type="module"이므로)
         if (typeof window.initialize === 'function') {
             showQuizApp();
         } else {
-            // main.js가 아직 로드되지 않았을 경우, 1초 후 재시도
             setTimeout(() => {
                 if (typeof window.initialize === 'function') {
                     showQuizApp();
@@ -244,9 +238,7 @@ function initMember() {
         }
     } else {
         console.log("🔐 비로그인 상태, 로그인 화면 표시");
-        // 로그인 화면이 HTML에 없으면 동적 생성
         if (!loginScreen) {
-            // fallback: 로그인 화면이 없으면 생성 (안전장치)
             const div = document.createElement('div');
             div.id = 'loginScreen';
             div.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);z-index:9999;display:flex;justify-content:center;align-items:center;padding:20px;box-sizing:border-box;';
