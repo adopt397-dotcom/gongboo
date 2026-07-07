@@ -802,9 +802,6 @@ function updateSetSelectorForSubject(subject) {
 
 
 // ============================================================
-// 1400 - initialize
-// ============================================================
-// ============================================================
 // 1400 - initialize (로그인 후 초기화 - 수정)
 // ============================================================
 async function initialize() {
@@ -965,6 +962,13 @@ async function initialize() {
     }
   }
 }
+
+// ============================================================
+// 1500 - showLoadingOverlay / hideLoadingOverlay
+// ============================================================
+function showLoadingOverlay(text) {
+  var overlay = document.createElement('div');
+  overlay.id = 'loadingOverlay';
   overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9998;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;font-size:18px;';
   overlay.innerHTML = '<div style="font-size:40px;margin-bottom:20px;">⏳</div><div>' + (text || 'Loading...') + '</div>';
   document.body.appendChild(overlay);
