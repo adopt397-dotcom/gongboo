@@ -137,18 +137,38 @@ function enableQuiz(enabled) {
 }
 
 // ============================================================
-// 5. API 호출
+// 5. API 호출 (JSON 방식 - 수정 완료)
 // ============================================================
 function callAPI(action, params = {}) {
-  const formData = new URLSearchParams();
-  formData.append('action', action);
-  Object.keys(params).forEach(key => formData.append(key, params[key]));
+  const url = MEMBER_API_URL;
+  
+  console.log('📤 API 요청:', action, params);
 
-  return fetch(MEMBER_API_URL, {
+  return fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: formData.toString()
-  }).then(res => res.json());
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ action, ...params })
+  })
+  .then(res => {
+    if (!res.ok) {
+      throw new Error('HTTP 오류: ' + res.status);
+    }
+    return res.json();
+  })
+  .then(data => {
+    console.log('📥 API 응답:', data);
+    if (data.status === 'error') {
+      throw new Error(data.message || '서버 오류');
+    }
+    return data;
+  })
+  .catch(err => {
+    console.error('🔥 API 호출 실패:', err);
+    alert('❌ 서버 통신 오류: ' + err.message);
+    throw err;
+  });
 }
 
 // ============================================================
