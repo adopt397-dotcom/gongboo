@@ -19,13 +19,22 @@ let memberUI = {
 };
 
 // ============================================================
-// BLOCK 0200: 초기화 함수 (INIT)
+// BLOCK 0200: 초기화 함수 (INIT) - 수정 완료
 // ============================================================
+let _memberInitialized = false;
+
 function initMemberSystem() {
+  // 이미 초기화되었으면 다시 실행하지 않음 (방어 코드)
+  if (_memberInitialized) {
+    console.log('🔐 회원 시스템 이미 초기화됨, 건너뜀');
+    return;
+  }
+  
   console.log('🔐 회원 시스템 초기화 중...');
   createStatusBar();
   createModals();
   checkSession();
+  _memberInitialized = true;
 }
 
 // ============================================================
