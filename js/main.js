@@ -805,7 +805,7 @@ function updateSetSelectorForSubject(subject) {
 // 1400 - initialize
 // ============================================================
 // ============================================================
-// 1400 - initialize (최종)
+// 1400 - initialize (로그인 후 초기화 - 수정)
 // ============================================================
 async function initialize() {
   console.log("🚀 initialize 시작");
@@ -850,17 +850,16 @@ async function initialize() {
 
     console.log("✅ DOM 연결 완료");
 
-   // 2. 과목 선택 이벤트 (HTML에 이미 존재하는 subjectSelect 사용)
-var subjectSelect = document.getElementById('subjectSelect');
-if (subjectSelect) {
-  subjectSelect.addEventListener('change', function() {
-    SELECTED_SUBJECT = this.value;
-    updateSetSelectorForSubject(SELECTED_SUBJECT);
-  });
-  console.log("✅ 과목 선택 이벤트 연결 완료");
-} else {
-  console.log("ℹ️ subjectSelect 요소가 없습니다 (과목 선택 기능 생략)");
-}
+    // 2. 과목 선택 이벤트
+    var subjectSelect = document.getElementById('subjectSelect');
+    if (subjectSelect) {
+      subjectSelect.addEventListener('change', function() {
+        SELECTED_SUBJECT = this.value;
+        updateSetSelectorForSubject(SELECTED_SUBJECT);
+      });
+    }
+    console.log("✅ 과목 선택 이벤트 연결 완료");
+
     // 3. 타이머 초기화
     initTimer();
     updateSplash(10, '서버 연결 중...');
@@ -917,17 +916,17 @@ if (subjectSelect) {
     attachEvents();
     console.log("✅ 이벤트 연결 완료");
 
-    // 9. 스플래시 숨기기
+    // 9. 스플래시 숨기기 (100%)
     updateSplash(100, 'Ready!');
     console.log("✅ 스플래시 100%");
 
-    // 10. 로그인 화면 표시
-    var loginScreen = document.getElementById('loginScreen');
-    if (loginScreen) {
-      loginScreen.style.display = 'flex';
-      console.log("✅ 로그인 화면 표시");
-    } else {
-      console.warn('⚠️ loginScreen 요소를 찾을 수 없음');
+    // 10. 설정 화면 표시 (로그인 후)
+    if (DOM.setupSection) {
+      DOM.setupSection.style.display = 'block';
+      console.log("✅ 설정 화면 표시");
+    }
+    if (DOM.quizMain) {
+      DOM.quizMain.style.display = 'none';
     }
 
     // 11. 스플래시 제거
@@ -948,10 +947,12 @@ if (subjectSelect) {
     console.error("❌ initialize 오류:", e);
     console.error(e.stack);
 
-    // 오류 시에도 로그인 화면은 표시
-    var loginScreen = document.getElementById('loginScreen');
-    if (loginScreen) {
-      loginScreen.style.display = 'flex';
+    // 오류 시에도 설정 화면은 표시
+    if (DOM.setupSection) {
+      DOM.setupSection.style.display = 'block';
+    }
+    if (DOM.quizMain) {
+      DOM.quizMain.style.display = 'none';
     }
     var overlay = document.getElementById('splashOverlay');
     if (overlay) {
@@ -964,48 +965,6 @@ if (subjectSelect) {
     }
   }
 }
-
-// ============================================================
-// 1500 - startQuizWithNumber
-// ============================================================
-async function startQuizWithNumber(uiStartNumber) {
-  if (isNaN(uiStartNumber) || uiStartNumber < 1) uiStartNumber = 1;
-  var subject = SELECTED_SUBJECT || 'sat';
-  if (uiStartNumber > TOTAL_QUESTIONS) { uiStartNumber = 1; }
-  var setNumber = Math.ceil(uiStartNumber / QUESTIONS_PER_SET);
-  var setStart = (setNumber - 1) * QUESTIONS_PER_SET + 1;
-  var startNum = uiStartNumber;
-  if (uiStartNumber < setStart || uiStartNumber > Math.min(setNumber * QUESTIONS_PER_SET, TOTAL_QUESTIONS)) { startNum = setStart; }
-  currentStartNumber = startNum;
-  var overlay = showLoadingOverlay('Loading ' + QUESTIONS_PER_SET + ' questions from ' + startNum + '...');
-  try {
-    var questions = await load50Questions(startNum, subject);
-    if (questions.length === 0) throw new Error('No question data received');
-    masterQuestions = questions.slice();
-    currentQuestions = masterQuestions.map(function(q) { return randomizeChoicesOnly(q); });
-    userAnswers = new Array(currentQuestions.length).fill(null);
-    correctCount = 0;
-    currentIndex = 0;
-    isReviewMode = false;
-    startAutoSave();
-    hideLoadingOverlay();
-    DOM.setupSection.style.display = 'none';
-    DOM.quizMain.style.display = 'block';
-    if (DOM.quizContent) DOM.quizContent.style.display = 'block';
-    if (DOM.progressArea) DOM.progressArea.style.display = 'flex';
-    renderCurrentQuestion();
-    resetTimer();
-    startTimer();
-  } catch(err) {
-    hideLoadingOverlay();
-    alert('❌ 문제를 불러오지 못했습니다: ' + err.message);
-    console.error(err);
-  }
-}
-
-function showLoadingOverlay(text) {
-  var overlay = document.createElement('div');
-  overlay.id = 'loadingOverlay';
   overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9998;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff;font-size:18px;';
   overlay.innerHTML = '<div style="font-size:40px;margin-bottom:20px;">⏳</div><div>' + (text || 'Loading...') + '</div>';
   document.body.appendChild(overlay);
