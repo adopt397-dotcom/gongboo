@@ -1106,14 +1106,46 @@ function renderGraphic(jsonData) {
 }
 
 // ============================================================
-// 1800 - startApp (로그인 후 실행)
+// 1800 - startApp (로그인 후 실행 - 즉시 설정 화면 표시)
 // ============================================================
 function startApp() {
+  console.log("🚀 startApp 실행");
+
+  // 로그인 화면 제거
   var loginScreen = document.getElementById('loginScreen');
   if (loginScreen) loginScreen.remove();
-  initialize();
-}
 
+  // ✅ 즉시 설정 화면 표시 (데이터 로딩과 별개로)
+  var setupSection = document.getElementById('setupSection');
+  if (setupSection) {
+    setupSection.style.display = 'block';
+    console.log("✅ 설정 화면 즉시 표시");
+  }
+  var quizMain = document.getElementById('quizMain');
+  if (quizMain) {
+    quizMain.style.display = 'none';
+  }
+
+  // 스플래시 제거
+  var overlay = document.getElementById('splashOverlay');
+  if (overlay) {
+    overlay.style.opacity = '0';
+    setTimeout(function() {
+      overlay.style.display = 'none';
+      var main = document.getElementById('mainContainer');
+      if (main) main.style.display = 'block';
+    }, 500);
+  }
+
+  // initialize는 백그라운드에서 실행 (데이터 로딩)
+  initialize().then(function() {
+    console.log("✅ initialize 백그라운드 완료");
+  }).catch(function(err) {
+    console.error("❌ initialize 오류:", err);
+  });
+
+  console.log("✅ startApp 완료 (설정 화면 표시됨)");
+}
 // ============================================================
 // 1900 - updateProgressDisplay
 // ============================================================
