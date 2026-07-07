@@ -20,20 +20,48 @@ let memberUI = {
 };
 
 // ============================================================
-// BLOCK 0200: 초기화 함수 (INIT) - 수정 완료
+// BLOCK 0200: 초기화 함수 (INIT) - 강제 실행 버전
 // ============================================================
 function initMemberSystem() {
-  // 이미 초기화되었으면 다시 실행하지 않음
-  if (_memberInitialized) {
-    console.log('🔐 회원 시스템 이미 초기화됨, 건너뜀');
-    return;
+  console.log('🔐 회원 시스템 초기화 중...');
+  
+  // DOM이 준비될 때까지 최대 3초 대기 (안전장치)
+  let attempts = 0;
+  const maxAttempts = 30; // 100ms * 30 = 3초
+  
+  function tryInit() {
+    attempts++;
+    console.log(`📌 초기화 시도 ${attempts}회`);
+    
+    // 1. 상태바 생성 시도
+    createStatusBar();
+    
+    // 2. 상태바가 실제로 생성되었는지 확인
+    const statusBar = document.getElementById('userStatusBar');
+    if (statusBar) {
+      console.log('✅ 상태바 생성 확인됨!');
+      createModals();
+      checkSession();
+      return;
+    }
+    
+    // 3. 아직 생성 안 되었고, 시도 횟수가 남았으면 재시도
+    if (attempts < maxAttempts) {
+      console.log(`⏳ 상태바 아직 안 보임, ${attempts}회 재시도 예정...`);
+      setTimeout(tryInit, 100);
+    } else {
+      console.error('❌ 3초가 지나도 상태바가 생성되지 않았습니다.');
+      // 마지막 수단: body 맨 앞에 직접 추가
+      const bar = document.createElement('div');
+      bar.id = 'userStatusBar';
+      bar.style.cssText = 'background:#1a2a4a;padding:8px 20px;color:#fff;text-align:center;';
+      bar.innerHTML = '⚠️ 회원 시스템 오류 - 새로고침 해주세요';
+      document.body.insertBefore(bar, document.body.firstChild);
+    }
   }
   
-  console.log('🔐 회원 시스템 초기화 중...');
-  createStatusBar();
-  createModals();
-  checkSession();
-  _memberInitialized = true;  // ← 초기화 완료 표시
+  // 바로 실행 (DOM이 준비되지 않았을 수 있으니 약간 지연)
+  setTimeout(tryInit, 50);
 }
 
 // ============================================================
