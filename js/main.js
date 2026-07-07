@@ -792,6 +792,61 @@ function updateSetSelectorForSubject(subject) {
 }
 
 // ============================================================
+// 1370 - startQuizWithNumber (문제 풀이 시작)
+// ============================================================
+async function startQuizWithNumber(uiStartNumber) {
+  if (isNaN(uiStartNumber) || uiStartNumber < 1) uiStartNumber = 1;
+
+  var subject = SELECTED_SUBJECT || 'sat';
+
+  if (uiStartNumber > TOTAL_QUESTIONS) {
+    console.log('Number ' + uiStartNumber + ' exceeds total ' + TOTAL_QUESTIONS + ', looping back to 1.');
+    uiStartNumber = 1;
+  }
+
+  var setNumber = Math.ceil(uiStartNumber / QUESTIONS_PER_SET);
+  var setStart = (setNumber - 1) * QUESTIONS_PER_SET + 1;
+  var startNum = uiStartNumber;
+  if (uiStartNumber < setStart || uiStartNumber > Math.min(setNumber * QUESTIONS_PER_SET, TOTAL_QUESTIONS)) {
+    startNum = setStart;
+  }
+
+  currentStartNumber = startNum;
+
+  var overlay = showLoadingOverlay('Loading ' + QUESTIONS_PER_SET + ' questions from ' + startNum + '...');
+
+  try {
+    var questions = await load50Questions(startNum, subject);
+    if (questions.length === 0) throw new Error('No question data received');
+
+    masterQuestions = questions.slice();
+    currentQuestions = masterQuestions.map(function(q) { return randomizeChoicesOnly(q); });
+    userAnswers = new Array(currentQuestions.length).fill(null);
+    correctCount = 0;
+    currentIndex = 0;
+    isReviewMode = false;
+
+    startAutoSave();
+    hideLoadingOverlay();
+
+    DOM.setupSection.style.display = 'none';
+    DOM.quizMain.style.display = 'block';
+    if (DOM.quizContent) DOM.quizContent.style.display = 'block';
+    if (DOM.progressArea) DOM.progressArea.style.display = 'flex';
+
+    renderCurrentQuestion();
+    resetTimer();
+    startTimer();
+
+  } catch(err) {
+    hideLoadingOverlay();
+    alert('❌ 문제를 불러오지 못했습니다: ' + err.message);
+    console.error(err);
+  }
+}
+
+
+// ============================================================
 // 1400 - initialize
 // ============================================================
 async function initialize() {
