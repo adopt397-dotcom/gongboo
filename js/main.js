@@ -62,8 +62,10 @@ var LANG = {
 // 0200 - API URL 및 상수
 // ============================================================
 // 1️⃣ ORIGINAL_API_URL (실제 사용)
+// ============================================================
+// ORIGINAL_API_URL (이전 URL로 복구)
+// ============================================================
 var ORIGINAL_API_URL = "https://script.google.com/macros/s/AKfycbx-S88kC_Ii_MxbibHmmHQYK_ITc1U9jphAxJ-uV0NSBGMFUidA3ItBE0niKhUyW32oMA/exec";
-// 2️⃣ API_URL (혹시 모르니 같이 변경)
 var API_URL = "https://script.google.com/macros/s/AKfycbx-S88kC_Ii_MxbibHmmHQYK_ITc1U9jphAxJ-uV0NSBGMFUidA3ItBE0niKhUyW32oMA/exec";
 
 var STORAGE_KEY = 'quiz_progress_main';
