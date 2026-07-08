@@ -373,73 +373,29 @@ async function load50Questions(uiStartNumber) {
     console.log('📡 Response type:', typeof data);
     console.log('📡 Is array?', Array.isArray(data));
     
-    // ★★★★★ 유연한 데이터 추출 (여러 형식 지원) ★★★★★
-    var questionsData = [];
-    
-    if (Array.isArray(data)) {
-      questionsData = data;
-      console.log('✅ Data is direct array, length:', questionsData.length);
-    } else if (data && typeof data === 'object') {
-      if (Array.isArray(data.data)) {
-        questionsData = data.data;
-        console.log('✅ Found data.data array, length:', questionsData.length);
-      } else if (Array.isArray(data.questions)) {
-        questionsData = data.questions;
-        console.log('✅ Found data.questions array, length:', questionsData.length);
-      } else if (Array.isArray(data.items)) {
-        questionsData = data.items;
-        console.log('✅ Found data.items array, length:', questionsData.length);
-      } else {
-        var keys = Object.keys(data);
-        if (keys.length > 0) {
-          questionsData = keys.map(function(key) {
-            var item = data[key];
-            if (typeof item === 'object' && item !== null) {
-              item._key = key;
-              return item;
-            }
-            return { question: String(item), answer: '1', _key: key };
-          });
-          console.log('✅ Converted object to array, length:', questionsData.length);
-        }
-      }
-    }
+    // ★★★★★ data.data 읽기 (GAS 응답 구조) ★★★★★
+    var questionsData = data.data || data.questions || data.items || [];
     
     if (!Array.isArray(questionsData) || questionsData.length === 0) {
       console.error('❌ No questions data found');
       throw new Error('No question data received');
     }
     
-    console.log('✅ Processing ' + questionsData.length + ' questions');
+    console.log('✅ Found ' + questionsData.length + ' questions');
     
     var processed = [];
     for (var idx = 0; idx < questionsData.length; idx++) {
       try {
-        var item = questionsData[idx];
-        var parsed = item;
+        var parsed = questionsData[idx];
         
-        if (typeof item === 'string') {
-          try {
-            parsed = JSON.parse(item);
-          } catch(e) {
-            parsed = { question: item, answer: '1' };
-          }
-        }
-        
-        if (!parsed || typeof parsed !== 'object') {
-          parsed = { question: String(item), answer: '1' };
-        }
-        
-        // ★★★★★ raw 데이터 유지 (renderLatex 호출 제거) ★★★★★
         var questionText = parsed.Q || parsed.question || parsed.q || parsed.문제 || parsed.text || 'Question ' + (uiStartNumber + idx);
         var passageText = parsed.passage || parsed.P || parsed.p || parsed.지문 || '';
         
-        // ★★★★★ choices 추출 (여러 형식 지원) ★★★★★
         var choices = {};
-        choices['1'] = parsed['1'] || parsed.choice1 || parsed.A || '';
-        choices['2'] = parsed['2'] || parsed.choice2 || parsed.B || '';
-        choices['3'] = parsed['3'] || parsed.choice3 || parsed.C || '';
-        choices['4'] = parsed['4'] || parsed.choice4 || parsed.D || '';
+        choices['1'] = parsed['1'] || parsed.choice1 || '';
+        choices['2'] = parsed['2'] || parsed.choice2 || '';
+        choices['3'] = parsed['3'] || parsed.choice3 || '';
+        choices['4'] = parsed['4'] || parsed.choice4 || '';
         
         var finalAnswer = '1';
         if (parsed.A !== undefined && parsed.A !== null && parsed.A !== "") {
@@ -448,8 +404,6 @@ async function load50Questions(uiStartNumber) {
           finalAnswer = String(parsed.answer).trim();
         } else if (parsed.정답 !== undefined && parsed.정답 !== null && parsed.정답 !== "") {
           finalAnswer = String(parsed.정답).trim();
-        } else if (parsed.a !== undefined && parsed.a !== null && parsed.a !== "") {
-          finalAnswer = String(parsed.a).trim();
         }
         
         var originalNumber = parsed.N || parsed.originalNumber || parsed.n || (uiStartNumber + idx);
@@ -481,7 +435,6 @@ async function load50Questions(uiStartNumber) {
     }
     
     console.log('✅ Successfully parsed ' + processed.length + ' questions');
-    console.log('📝 First question preview:', processed[0]);
     return processed;
   } catch(err) {
     console.error('❌ Load failed:', err);
