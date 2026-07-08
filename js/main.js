@@ -347,7 +347,7 @@ function updateSetSelector() {
   }
 }
 
-// ============================================================
+/// ============================================================
 // 0900 - load50Questions 함수 (GAS API 호출 및 데이터 파싱)
 // ============================================================
 async function load50Questions(uiStartNumber) {
@@ -375,29 +375,79 @@ async function load50Questions(uiStartNumber) {
     console.log('📡 Response type:', typeof data);
     console.log('📡 Is array?', Array.isArray(data));
     
-    // ★★★★★ data.data 읽기 (GAS 응답 구조) ★★★★★
-    var questionsData = data.data || data.questions || data.items || [];
+    // ★★★★★ 유연한 데이터 추출 (배열 + data.data 모두 지원) ★★★★★
+    var questionsData = [];
+    
+    if (Array.isArray(data)) {
+      questionsData = data;
+      console.log('✅ Data is direct array, length:', questionsData.length);
+    } else if (data && typeof data === 'object') {
+      if (Array.isArray(data.data)) {
+        questionsData = data.data;
+        console.log('✅ Found data.data array, length:', questionsData.length);
+      } else if (Array.isArray(data.questions)) {
+        questionsData = data.questions;
+        console.log('✅ Found data.questions array, length:', questionsData.length);
+      } else if (Array.isArray(data.items)) {
+        questionsData = data.items;
+        console.log('✅ Found data.items array, length:', questionsData.length);
+      } else {
+        var keys = Object.keys(data);
+        if (keys.length > 0) {
+          questionsData = keys.map(function(key) {
+            var item = data[key];
+            if (typeof item === 'object' && item !== null) {
+              item._key = key;
+              return item;
+            }
+            return { question: String(item), answer: '1', _key: key };
+          });
+          console.log('✅ Converted object to array, length:', questionsData.length);
+        }
+      }
+    }
     
     if (!Array.isArray(questionsData) || questionsData.length === 0) {
       console.error('❌ No questions data found');
       throw new Error('No question data received');
     }
     
-    console.log('✅ Found ' + questionsData.length + ' questions');
+    console.log('✅ Processing ' + questionsData.length + ' questions');
     
     var processed = [];
     for (var idx = 0; idx < questionsData.length; idx++) {
       try {
-        var parsed = questionsData[idx];
+        var item = questionsData[idx];
+        var parsed = item;
         
+        if (typeof item === 'string') {
+          try {
+            parsed = JSON.parse(item);
+          } catch(e) {
+            parsed = { question: item, answer: '1' };
+          }
+        }
+        
+        if (!parsed || typeof parsed !== 'object') {
+          parsed = { question: String(item), answer: '1' };
+        }
+        
+        // ★★★★★ raw 데이터 유지 ★★★★★
         var questionText = parsed.Q || parsed.question || parsed.q || parsed.문제 || parsed.text || 'Question ' + (uiStartNumber + idx);
         var passageText = parsed.passage || parsed.P || parsed.p || parsed.지문 || '';
         
+        // ★★★★★ choices 추출 (API 응답 구조에 맞게) ★★★★★
         var choices = {};
-        choices['1'] = parsed['1'] || parsed.choice1 || '';
-        choices['2'] = parsed['2'] || parsed.choice2 || '';
-        choices['3'] = parsed['3'] || parsed.choice3 || '';
-        choices['4'] = parsed['4'] || parsed.choice4 || '';
+        if (parsed.choices && typeof parsed.choices === 'object') {
+          // API 응답에 choices 객체가 있는 경우
+          choices = parsed.choices;
+        } else {
+          // 기존 방식 (선택지가 직접 키로 있는 경우)
+          choices['1'] = parsed['1'] || parsed.choice1 || '';
+          choices['2'] = parsed['2'] || parsed.choice2 || '';
+          choices['3'] = parsed['3'] || parsed.choice3 || '';
+          choices['4'] = parsed['4'] || parsed.choice4 || '';
+        }
         
         var finalAnswer = '1';
         if (parsed.A !== undefined && parsed.A !== null && parsed.A !== "") {
