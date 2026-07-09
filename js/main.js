@@ -267,6 +267,38 @@ function startAutoSave() {
 // ============================================================
 // B007: API 호출 함수 (detectTotalQuestions - 캐시 버전)
 // ============================================================
+function updateSetSelector() {
+  var setSelector = document.getElementById('setSelector');
+  if (!setSelector) return;
+  while (setSelector.options.length > 0) {
+    setSelector.remove(0);
+  }
+  var totalQuestions = TOTAL_QUESTIONS > 0 ? TOTAL_QUESTIONS : 360;
+  var totalSets = Math.ceil(totalQuestions / QUESTIONS_PER_SET);
+  for (var i = 1; i <= totalSets; i++) {
+    var start = (i - 1) * QUESTIONS_PER_SET + 1;
+    var end = Math.min(i * QUESTIONS_PER_SET, totalQuestions);
+    var option = document.createElement('option');
+    option.value = i;
+    option.textContent = 'Set ' + i + ' (Questions ' + start + '-' + end + ')';
+    setSelector.appendChild(option);
+  }
+  var maxStartNumber = Math.max(1, totalQuestions - QUESTIONS_PER_SET + 1);
+  if (DOM.maxNumberDisplay) {
+    DOM.maxNumberDisplay.innerHTML = maxStartNumber.toLocaleString();
+  }
+  if (DOM.startNumberInput) {
+    DOM.startNumberInput.placeholder = '1 ~ ' + maxStartNumber.toLocaleString();
+    DOM.startNumberInput.max = maxStartNumber;
+  }
+  if (setSelector.options.length > 0) {
+    setSelector.value = '1';
+  }
+  if (DOM.startNumberInput) {
+    DOM.startNumberInput.value = '1';
+  }
+}
+
 async function detectTotalQuestions() {
     // ★★★★★ 1. 캐시 확인 (5분 이내면 사용) ★★★★★
     const cached = localStorage.getItem(TOTAL_CACHE_KEY);
