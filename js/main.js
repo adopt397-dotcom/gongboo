@@ -1226,169 +1226,9 @@ renderCurrentQuestion = renderCurrentQuestionNew;
 // ============================================================
 // 1400 - 이벤트 및 초기화 함수 (attachKeyboardEvents, attachEvents, showProgressModal, resumeProgress, initialize)
 // ============================================================
-function attachKeyboardEvents() {
-  document.addEventListener('keydown', function(event) {
-    if (event.ctrlKey && (event.key === 'c' || event.key === 'v' || event.key === 'x' || event.key === 'a' ||
-        event.key === 'C' || event.key === 'V' || event.key === 'X' || event.key === 'A')) {
-      return;
-    }
-    if (!DOM.quizContent || DOM.quizContent.style.display === 'none' || DOM.quizContent.style.display === '') return;
-    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
-    var key = event.key;
-    if (key === 'n' || key === 'N' || key === 'L') {
-      event.preventDefault();
-      if (currentIndex < currentQuestions.length - 1) goNext();
-      return;
-    }
-    if (key === 'p' || key === 'P' || key === 'H') {
-      event.preventDefault();
-      if (currentIndex > 0) goPrev();
-      return;
-    }
-    if (key === 's' || key === 'S' || key === 'A') {
-      event.preventDefault();
-      skipQuestion();
-      return;
-    }
-    if (key === 'Enter') {
-      if (currentIndex >= currentQuestions.length - 1 && DOM.submitBtn && DOM.submitBtn.style.display !== 'none') {
-        var isAnswered = (userAnswers[currentIndex] !== null && userAnswers[currentIndex] !== undefined && userAnswers[currentIndex] !== -1);
-        if (isAnswered) {
-          event.preventDefault();
-          showResults();
-        }
-      }
-      return;
-    }
-    if (key === 'ArrowLeft') {
-      event.preventDefault();
-      if (currentIndex > 0) goPrev();
-      return;
-    }
-    if (key === 'ArrowRight') {
-      event.preventDefault();
-      if (currentIndex < currentQuestions.length - 1) goNext();
-      return;
-    }
-  });
-}
-
-function attachEvents() {
-  var continueBtn = document.getElementById('progressContinueBtn');
-  if (continueBtn) {
-    continueBtn.addEventListener('click', function() {
-      var modal = document.getElementById('progressModal');
-      var savedData = modal.getAttribute('data-saved');
-      if (savedData) {
-        var saved = JSON.parse(savedData);
-        modal.style.display = 'none';
-        resumeProgress(saved);
-      }
-    });
-  }
-  var cancelBtn = document.getElementById('progressCancelBtn');
-  if (cancelBtn) {
-    cancelBtn.addEventListener('click', function() {
-      var modal = document.getElementById('progressModal');
-      modal.style.display = 'none';
-      clearProgress();
-      var startNum = parseInt(document.getElementById('startNumber').value) || 1;
-      startQuizWithNumber(startNum);
-    });
-  }
-  DOM.startQuizBtn.addEventListener('click', function() {
-    var startNum = parseInt(DOM.startNumberInput.value);
-    if (isNaN(startNum) || DOM.startNumberInput.value === "") startNum = 1;
-    if (startNum < 1) startNum = 1;
-    if (startNum > TOTAL_QUESTIONS) startNum = TOTAL_QUESTIONS;
-    clearProgress();
-    startQuizWithNumber(startNum);
-  });
-  DOM.startNumberInput.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      DOM.startQuizBtn.click();
-    }
-  });
-  DOM.prevBtn.addEventListener('click', goPrev);
-  DOM.nextBtn.addEventListener('click', goNext);
-  DOM.skipBtn.addEventListener('click', skipQuestion);
-  DOM.submitBtn.addEventListener('click', showResults);
-  DOM.quitBtn.addEventListener('click', function() {
-    saveProgress();
-    if (confirm(LANG.confirmExit)) window.location.reload();
-  });
-  DOM.retryAllBtn.addEventListener('click', function() {
-    clearProgress();
-    DOM.resultModal.style.display = 'none';
-    startQuizWithNumber(currentStartNumber);
-  });
-  DOM.reviewWrongBtn.addEventListener('click', function() {
-    DOM.resultModal.style.display = 'none';
-    showWrongAnswersList();
-  });
-  DOM.closeModalBtn.addEventListener('click', function() {
-    DOM.resultModal.style.display = 'none';
-  });
-  DOM.closeWrongBtn.addEventListener('click', function() {
-    DOM.wrongModal.style.display = 'none';
-  });
-  DOM.retryWrongFromReviewBtn.addEventListener('click', startWrongOnlyReview);
-  document.getElementById('splashRetry').addEventListener('click', function() {
-    document.getElementById('splashError').style.display = 'none';
-    document.getElementById('splashRetry').style.display = 'none';
-    document.getElementById('splashStatus').textContent = 'Retrying...';
-    initialize();
-  });
-  attachKeyboardEvents();
-}
-
-function showProgressModal(saved) {
-  var answered = saved.userAnswers.filter(function(a) { return a !== null && a !== -1; }).length;
-  var total = saved.currentQuestions.length;
-  var progress = saved.currentIndex + 1;
-  var body = document.getElementById('progressModalBody');
-  body.innerHTML = '<div style="padding:10px 0;">' +
-    '<p style="font-size:22px;font-weight:700;color:#2c3e50;text-align:center;margin-bottom:10px;">📊 Resume Session</p>' +
-    '<div style="background:#f8f9fa;border-radius:12px;padding:16px 20px;margin:15px 0;">' +
-    '<div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Progress</span><strong>' + progress + ' / ' + total + '</strong></div>' +
-    '<div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Answered</span><strong>' + answered + ' / ' + total + '</strong></div>' +
-    '<div style="display:flex;justify-content:space-between;padding:4px 0;"><span>Correct</span><strong>' + (saved.correctCount || 0) + '</strong></div>' +
-    '</div>' +
-    '<p style="font-size:13px;color:#999;text-align:center;margin-top:10px;">' +
-    'Click <strong>"Continue"</strong> to resume. Click <strong>"Start Fresh"</strong> to begin again.' +
-    '</p>' +
-    '</div>';
-  document.getElementById('progressModal').setAttribute('data-saved', JSON.stringify(saved));
-  document.getElementById('progressModal').style.display = 'flex';
-}
-
-function resumeProgress(saved) {
-  currentQuestions = saved.currentQuestions;
-  userAnswers = saved.userAnswers;
-  currentIndex = saved.currentIndex || 0;
-  correctCount = saved.correctCount || 0;
-  currentStartNumber = saved.currentStartNumber || 1;
-  isReviewMode = saved.isReviewMode || false;
-  if (saved.masterQuestions) masterQuestions = saved.masterQuestions;
-  if (saved.originalQuestions) originalQuestions = saved.originalQuestions;
-  startAutoSave();
-  DOM.setupSection.style.display = 'none';
-  DOM.quizMain.style.display = 'block';
-  if (DOM.quizContent) DOM.quizContent.style.display = 'block';
-  if (DOM.progressArea) DOM.progressArea.style.display = 'flex';
-  if (isReviewMode) {
-    DOM.reviewBanner.style.display = 'block';
-    DOM.reviewBanner.innerHTML = '<span>Review Mode: ' + currentQuestions.length + ' questions</span>' +
-      '<button id="exitReviewBtn" class="exit-review-btn">EXIT REVIEW</button>';
-    document.getElementById('exitReviewBtn').addEventListener('click', function() {
-      clearProgress();
-      window.location.reload();
-    });
-  }
-  renderCurrentQuestion();
-}
-
+// ============================================================
+// 1400 - 초기화 함수 (initialize)
+// ============================================================
 function initialize() {
   DOM.setupSection = document.getElementById('setupSection');
   DOM.quizMain = document.getElementById('quizMain');
@@ -1427,6 +1267,31 @@ function initialize() {
   if (!DOM.progressArea) {
     DOM.progressArea = document.getElementById('progressArea');
   }
+
+  // ★★★★★ 로그인 상태 확인 (1단계 보안) ★★★★★
+  if (typeof window.isLoggedIn === 'function' && !window.isLoggedIn()) {
+    // 로그인 오버레이 표시
+    if (typeof window.renderLoginOverlay === 'function') {
+      window.renderLoginOverlay();
+    }
+    // setupSection 숨김 (문제 시작 화면 차단)
+    if (DOM.setupSection) {
+      DOM.setupSection.style.display = 'none';
+    }
+    // quizMain 숨김
+    if (DOM.quizMain) {
+      DOM.quizMain.style.display = 'none';
+    }
+    console.log('🔒 Not logged in. Setup section hidden.');
+    return;
+  }
+
+  // 로그인 된 경우에만 setupSection 표시
+  if (DOM.setupSection) {
+    DOM.setupSection.style.display = 'block';
+  }
+  console.log('✅ Logged in. Setup section visible.');
+
   initTimer();
   updateSplash(10, 'Connecting to server...');
   setTimeout(async function() {
@@ -1439,32 +1304,31 @@ function initialize() {
       updateSetSelector();
       updateSplash(60, 'Preparing data...');
       var maxStartNumber = TOTAL_QUESTIONS;
-      console.log('📊 Total questions: ' + TOTAL_QUESTIONS);
+      console.log('Total questions: ' + TOTAL_QUESTIONS);
       if (DOM.maxNumberSpan) DOM.maxNumberSpan.style.display = 'none';
       if (DOM.maxNumberDisplay) DOM.maxNumberDisplay.style.display = 'none';
-      DOM.startNumberInput.placeholder = '1-' + TOTAL_QUESTIONS;
+      DOM.startNumberInput.placeholder = '1- ' + TOTAL_QUESTIONS;
       DOM.startNumberInput.max = TOTAL_QUESTIONS;
       DOM.startNumberInput.min = 1;
       if (DOM.setSelector) {
         DOM.setSelector.addEventListener('change', function() {
           var setNum = parseInt(this.value);
-          if (!isNaN(setNum) && setNum >= 1) {
+          if (isNaN(setNum) && setNum >= 1) {
             var startNum = (setNum - 1) * QUESTIONS_PER_SET + 1;
             DOM.startNumberInput.value = startNum;
             console.log('Set ' + setNum + ' selected, starting from question ' + startNum);
           }
         });
-        if (DOM.setSelector.options.length > 0) {
-          DOM.setSelector.value = '1';
-          DOM.startNumberInput.value = '';
-        }
+      }
+      if (DOM.setSelector.options.length > 0) {
+        DOM.setSelector.value = '1';
+        DOM.startNumberInput.value = '';
       }
       var saved = loadProgress();
       if (saved && saved.currentQuestions && saved.currentQuestions.length > 0) {
         var answered = saved.userAnswers.filter(function(a) { return a !== null && a !== -1; }).length;
         var timeStr = new Date(saved.timestamp).toLocaleString();
-        DOM.savedBadgeContainer.innerHTML =
-          '<div class="resume-badge" id="resumeBadge">' +
+        DOM.savedBadgeContainer.innerHTML = '<div class="resume-badge" id="resumeBadge">' +
           '<div class="count">' + answered + ' / ' + saved.currentQuestions.length + ' answered</div>' +
           '<div class="time">' + timeStr + '</div>' +
           '<div class="hint">Click to resume</div>' +
@@ -1495,14 +1359,14 @@ function initialize() {
       attachEvents();
       updateSplash(100, 'Ready!');
       setTimeout(function() {
-        hideSplash();
-        DOM.setupSection.style.display = 'block';
-        DOM.quizMain.style.display = 'block';
-        setTimeout(function() { DOM.startNumberInput.focus(); DOM.startNumberInput.select(); }, 150);
-        setTimeout(function() { DOM.startNumberInput.focus(); DOM.startNumberInput.select(); }, 400);
-        setTimeout(function() { DOM.startNumberInput.focus(); DOM.startNumberInput.select(); }, 700);
-        console.log('✅ Initialization complete: ' + TOTAL_QUESTIONS + ' total questions');
+        DOM.startNumberInput.focus();
+        DOM.startNumberInput.select();
       }, 400);
+      setTimeout(function() {
+        DOM.startNumberInput.focus();
+        DOM.startNumberInput.select();
+      }, 700);
+      console.log('Initialization complete: ' + TOTAL_QUESTIONS + ' total questions');
     } catch(e) {
       console.error('Initialization error:', e);
       showSplashError(e.message || 'Initialization failed');
