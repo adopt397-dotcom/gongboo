@@ -265,232 +265,63 @@ function startAutoSave() {
 }
 
 // ============================================================
-// B007: API 호출 함수 (detectTotalQuestions, updateSetSelector, load50Questions)
+// B007: API 호출 함수 (detectTotalQuestions - 캐시 버전)
 // ============================================================
 async function detectTotalQuestions() {
-  localStorage.removeItem(TOTAL_CACHE_KEY);
-  console.log('Cache cleared, fetching fresh data...');
-  
-  try {
-    updateSplash(30, 'Checking total questions...');
-    var url = ORIGINAL_API_URL + '?total=true&_=' + Date.now();
-    console.log('📡 Requesting total (direct):', url);
-    
-    var response = await fetch(url);
-    console.log('📡 Response status:', response.status);
-    
-    if (!response.ok) {
-      throw new Error('HTTP ' + response.status);
-    }
-    
-    var text = await response.text();
-    console.log('📡 Response text (first 200 chars):', text.substring(0, 200));
-    
-    if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-      console.error('❌ Received HTML. Check Apps Script deployment.');
-      throw new Error('HTML response - check Apps Script URL');
-    }
-    
-    var data = JSON.parse(text);
-    console.log('📡 Total API response:', JSON.stringify(data));
-    
-    var total = 0;
-    if (data && typeof data === 'object') {
-      if (typeof data.total === 'number') total = data.total;
-      else if (typeof data.count === 'number') total = data.count;
-      else if (typeof data.length === 'number') total = data.length;
-    }
-    
-    if (total > 0) {
-      TOTAL_QUESTIONS = total;
-      localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS));
-      console.log('✅ Total questions: ' + TOTAL_QUESTIONS);
-      return TOTAL_QUESTIONS;
-    }
-    
-    console.warn('⚠️ Could not detect total, using fallback: 360');
-  } catch(e) {
-    console.error('❌ Total API call failed:', e.message);
-  }
-  
-  TOTAL_QUESTIONS = 360;
-  localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS));
-  return TOTAL_QUESTIONS;
-}
+    // ★★★★★ 1. 캐시 확인 (5분 이내면 사용) ★★★★★
+    const cached = localStorage.getItem(TOTAL_CACHE_KEY);
+    const cachedTime = localStorage.getItem(TOTAL_CACHE_KEY + '_time');
+    const now = Date.now();
+    const CACHE_TTL = 5 * 60 * 1000; // 5분
 
-function updateSetSelector() {
-  var setSelector = document.getElementById('setSelector');
-  if (!setSelector) return;
-  
-  while (setSelector.options.length > 0) {
-    setSelector.remove(0);
-  }
-  
-  var totalQuestions = TOTAL_QUESTIONS > 0 ? TOTAL_QUESTIONS : 360;
-  var totalSets = Math.ceil(totalQuestions / QUESTIONS_PER_SET);
-  console.log('📊 Total Sets: ' + totalSets + ' (Questions: ' + totalQuestions + ')');
-  
-  for (var i = 1; i <= totalSets; i++) {
-    var start = (i - 1) * QUESTIONS_PER_SET + 1;
-    var end = Math.min(i * QUESTIONS_PER_SET, totalQuestions);
-    var option = document.createElement('option');
-    option.value = i;
-    option.textContent = 'Set ' + i + ' (Questions ' + start + '-' + end + ')';
-    setSelector.appendChild(option);
-  }
-  
-  var maxStartNumber = Math.max(1, totalQuestions - QUESTIONS_PER_SET + 1);
-  if (DOM.maxNumberDisplay) {
-    DOM.maxNumberDisplay.innerText = maxStartNumber.toLocaleString();
-  }
-  if (DOM.startNumberInput) {
-    DOM.startNumberInput.placeholder = '1 ~ ' + maxStartNumber.toLocaleString();
-    DOM.startNumberInput.max = maxStartNumber;
-  }
-  
-  if (setSelector.options.length > 0) {
-    setSelector.value = '1';
-  }
-  if (DOM.startNumberInput) {
-    DOM.startNumberInput.value = '1';
-  }
-}
+    if (cached && cachedTime && (now - parseInt(cachedTime) < CACHE_TTL)) {
+        const total = parseInt(cached);
+        console.log('✅ Using cached total:', total);
+        TOTAL_QUESTIONS = total;
+        updateSplash(60, 'Preparing data...');
+        return total;
+    }
 
-async function load50Questions(uiStartNumber) {
-  if (TOTAL_QUESTIONS === 0) await detectTotalQuestions();
-  try {
-    var url = ORIGINAL_API_URL + '?start=' + uiStartNumber + '&limit=' + QUESTIONS_PER_SET;
-    console.log('📡 Requesting questions (direct):', url);
+    // ★★★★★ 2. 캐시가 없거나 만료됐으면 API 호출 ★★★★★
+    console.log('🔄 Fetching fresh total...');
+    localStorage.removeItem(TOTAL_CACHE_KEY);
     
-    var response = await fetch(url);
-    console.log('📡 Response status:', response.status);
-    
-    if (!response.ok) {
-      throw new Error('HTTP ' + response.status);
-    }
-    
-    var text = await response.text();
-    console.log('📡 Response text (first 200 chars):', text.substring(0, 200));
-    
-    if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-      console.error('❌ Received HTML. Check Apps Script deployment.');
-      throw new Error('HTML response - check Apps Script URL');
-    }
-    
-    var data = JSON.parse(text);
-    console.log('📡 Response type:', typeof data);
-    console.log('📡 Is array?', Array.isArray(data));
-    
-    var questionsData = [];
-    
-    if (Array.isArray(data)) {
-      questionsData = data;
-      console.log('✅ Data is direct array, length:', questionsData.length);
-    } else if (data && typeof data === 'object') {
-      if (Array.isArray(data.data)) {
-        questionsData = data.data;
-        console.log('✅ Found data.data array, length:', questionsData.length);
-      } else if (Array.isArray(data.questions)) {
-        questionsData = data.questions;
-        console.log('✅ Found data.questions array, length:', questionsData.length);
-      } else if (Array.isArray(data.items)) {
-        questionsData = data.items;
-        console.log('✅ Found data.items array, length:', questionsData.length);
-      } else {
-        var keys = Object.keys(data);
-        if (keys.length > 0) {
-          questionsData = keys.map(function(key) {
-            var item = data[key];
-            if (typeof item === 'object' && item !== null) {
-              item._key = key;
-              return item;
-            }
-            return { question: String(item), answer: '1', _key: key };
-          });
-          console.log('✅ Converted object to array, length:', questionsData.length);
-        }
-      }
-    }
-    
-    if (!Array.isArray(questionsData) || questionsData.length === 0) {
-      console.error('❌ No questions data found');
-      throw new Error('No question data received');
-    }
-    
-    console.log('✅ Processing ' + questionsData.length + ' questions');
-    
-    var processed = [];
-    for (var idx = 0; idx < questionsData.length; idx++) {
-      try {
-        var item = questionsData[idx];
-        var parsed = item;
+    try {
+        updateSplash(30, 'Checking total questions...');
+        const url = ORIGINAL_API_URL + '?total=true&_=' + Date.now();
+        console.log('📡 Requesting total (direct):', url);
         
-        if (typeof item === 'string') {
-          try {
-            parsed = JSON.parse(item);
-          } catch(e) {
-            parsed = { question: item, answer: '1' };
-          }
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        
+        const text = await response.text();
+        if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+            throw new Error('HTML response - check Apps Script URL');
         }
         
-        if (!parsed || typeof parsed !== 'object') {
-          parsed = { question: String(item), answer: '1' };
+        const data = JSON.parse(text);
+        const total = data.total || 0;
+        
+        if (total > 0) {
+            TOTAL_QUESTIONS = total;
+            localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS));
+            localStorage.setItem(TOTAL_CACHE_KEY + '_time', String(now));
+            console.log('✅ Total questions:', total);
+            updateSplash(60, 'Preparing data...');
+            return total;
         }
         
-        var questionText = parsed.Q || parsed.question || parsed.q || parsed.문제 || parsed.text || 'Question ' + (uiStartNumber + idx);
-        var passageText = parsed.passage || parsed.P || parsed.p || parsed.지문 || '';
-        
-        var choices = {};
-        choices['1'] = parsed['1'] || parsed.choice1 || 'Option A';
-        choices['2'] = parsed['2'] || parsed.choice2 || 'Option B';
-        choices['3'] = parsed['3'] || parsed.choice3 || 'Option C';
-        choices['4'] = parsed['4'] || parsed.choice4 || 'Option D';
-        
-        var finalAnswer = '1';
-        if (parsed.A !== undefined && parsed.A !== null && parsed.A !== "") {
-          finalAnswer = String(parsed.A).trim();
-        } else if (parsed.answer !== undefined && parsed.answer !== null && parsed.answer !== "") {
-          finalAnswer = String(parsed.answer).trim();
-        } else if (parsed.정답 !== undefined && parsed.정답 !== null && parsed.정답 !== "") {
-          finalAnswer = String(parsed.정답).trim();
-        } else if (parsed.a !== undefined && parsed.a !== null && parsed.a !== "") {
-          finalAnswer = String(parsed.a).trim();
-        }
-        
-        var originalNumber = parsed.N || parsed.originalNumber || parsed.n || (uiStartNumber + idx);
-        
-        processed.push({
-          N: originalNumber,
-          question: questionText,
-          passage: passageText,
-          choices: choices,
-          answer: finalAnswer,
-          explanation: parsed.explanation || parsed.E || parsed.e || parsed.해설 || 'No explanation available.',
-          graphic: parsed.graphic || parsed.G || parsed.g || parsed.그래픽 || parsed.P_graph || '',
-          originalNumber: originalNumber,
-          A: parsed.A || parsed.answer || parsed.정답 || ''
-        });
-        
-        if (idx === 0) {
-          console.log('📝 First question mapped:', processed[0]);
-        }
-      } catch(e) {
-        console.warn('⚠️ Parse error for item', idx, ':', e);
-      }
+        console.warn('⚠️ Could not detect total, using fallback: 1320');
+    } catch(e) {
+        console.error('❌ Total API call failed:', e.message);
     }
     
-    if (processed.length === 0) {
-      console.error('❌ No questions could be parsed');
-      throw new Error('No valid question data');
-    }
-    
-    console.log('✅ Successfully parsed ' + processed.length + ' questions');
-    console.log('📝 First question preview:', processed[0]);
-    return processed;
-  } catch(err) {
-    console.error('❌ Load failed:', err);
-    return [];
-  }
+    // ★★★★★ 3. 실패 시 fallback ★★★★★
+    TOTAL_QUESTIONS = 1320;
+    localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS));
+    localStorage.setItem(TOTAL_CACHE_KEY + '_time', String(now));
+    updateSplash(60, 'Preparing data...');
+    return TOTAL_QUESTIONS;
 }
 
 // ============================================================
