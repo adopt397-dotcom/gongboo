@@ -171,6 +171,64 @@
         .form-hidden {
             display: none;
         }
+        .subject-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.58);
+        }
+        .subject-modal.open {
+            display: flex;
+        }
+        .subject-dialog {
+            width: min(420px, 100%);
+            padding: 30px;
+            border: 1px solid #E2E8F0;
+            border-radius: 18px;
+            background: #FFFFFF;
+            box-shadow: 0 22px 55px rgba(15, 23, 42, 0.25);
+        }
+        .subject-icon {
+            margin-bottom: 8px;
+            text-align: center;
+            font-size: 32px;
+        }
+        .subject-dialog h2 {
+            margin: 0;
+            color: #2D3748;
+            text-align: center;
+            font-size: 22px;
+        }
+        .subject-dialog p {
+            margin: 8px 0 20px;
+            color: #718096;
+            text-align: center;
+            font-size: 14px;
+        }
+        .subject-select {
+            width: 100%;
+            min-height: 52px;
+            padding: 0 44px 0 16px;
+            border: 1px solid #CBD5E0;
+            border-radius: 12px;
+            background: #F7FAFC;
+            color: #2D3748;
+            font: inherit;
+            cursor: pointer;
+        }
+        .subject-select:focus {
+            border-color: #F5A623;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.18);
+        }
+        .subject-confirm {
+            width: 100%;
+            margin-top: 18px;
+        }
         @media (max-width: 480px) {
             .container {
                 padding: 24px 18px;
@@ -274,6 +332,16 @@
         </div>
     </div>
 
+    <div id="subjectModal" class="subject-modal" role="dialog" aria-modal="true" aria-labelledby="subjectModalTitle">
+        <div class="subject-dialog">
+            <div class="subject-icon">📚</div>
+            <h2 id="subjectModalTitle">Select a Subject</h2>
+            <p>Choose the subject you want to study.</p>
+            <select id="subjectSelect" class="subject-select" aria-label="Subject"></select>
+            <button id="subjectConfirmBtn" class="btn-primary subject-confirm" type="button">Continue</button>
+        </div>
+    </div>
+
     <script>
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbzlkXn1EZuUto9MuuNxpSHl-SACd4Y-EMrz6ee7hUY6IjjHCw-prVx8JS0W4NpRDg37/exec';
 
@@ -281,6 +349,40 @@
             const el = document.getElementById(elementId);
             el.textContent = message;
             el.className = 'result-box' + (isSuccess ? ' success' : ' error');
+        }
+
+        function chooseSubject(subjects) {
+            if (subjects.length === 1) return Promise.resolve(subjects[0]);
+
+            return new Promise(function(resolve) {
+                const modal = document.getElementById('subjectModal');
+                const select = document.getElementById('subjectSelect');
+                const confirmButton = document.getElementById('subjectConfirmBtn');
+
+                select.innerHTML = '';
+                subjects.forEach(function(subject, index) {
+                    const option = document.createElement('option');
+                    option.value = String(index);
+                    option.textContent = subject.NAME || subject.CODE || ('Subject ' + (index + 1));
+                    select.appendChild(option);
+                });
+
+                function confirmSelection() {
+                    confirmButton.removeEventListener('click', confirmSelection);
+                    select.removeEventListener('keydown', handleKeydown);
+                    modal.classList.remove('open');
+                    resolve(subjects[Number(select.value) || 0]);
+                }
+
+                function handleKeydown(event) {
+                    if (event.key === 'Enter') confirmSelection();
+                }
+
+                confirmButton.addEventListener('click', confirmSelection);
+                select.addEventListener('keydown', handleKeydown);
+                modal.classList.add('open');
+                setTimeout(function() { select.focus(); }, 0);
+            });
         }
 
         function togglePasswordVisibility(inputId, toggleId) {
@@ -360,8 +462,7 @@
                         showResult('loginResult', '❌ No active subjects are assigned to this account.', false);
                         return;
                     }
-                    const labels = subjects.map(function(subject, index) { return (index + 1) + '. ' + (subject.NAME || subject.CODE); }).join('\n');
-                    const selected = subjects.length === 1 ? subjects[0] : subjects[Math.max(0, Math.min(subjects.length - 1, (parseInt(prompt('Select a subject:\n' + labels), 10) || 1) - 1))];
+                    const selected = await chooseSubject(subjects);
                     localStorage.setItem('quiz_current_subject_v1', JSON.stringify(selected));
                     showResult('loginResult', '✅ Welcome, ' + (user.name || email) + '!', true);
                     window.location.href = './index.html';
