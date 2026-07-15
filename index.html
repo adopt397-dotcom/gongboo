@@ -1,41 +1,21 @@
-<!-- MEMBER-ONLY ENTRY: admin.html과 기능은 같고 로그인/복사 제한만 추가 -->
+<!-- MEMBER-ONLY ENTRY -->
 <script>
-  (function memberEntryGuard() {
-    var USER_KEY = 'quiz_current_user_v1';
-    var SUBJECTS_KEY = 'quiz_available_subjects_v1';
-    var SUBJECT_KEY = 'quiz_current_subject_v1';
-
+  (function() {
     try {
-      var user = JSON.parse(localStorage.getItem(USER_KEY) || 'null');
-      var subjects = JSON.parse(localStorage.getItem(SUBJECTS_KEY) || '[]');
-      var subject = JSON.parse(localStorage.getItem(SUBJECT_KEY) || 'null');
-
+      var user = JSON.parse(localStorage.getItem('quiz_current_user_v1') || 'null');
+      var subjects = JSON.parse(localStorage.getItem('quiz_available_subjects_v1') || '[]');
+      var subject = JSON.parse(localStorage.getItem('quiz_current_subject_v1') || 'null');
       if (!user || !user.email || !Array.isArray(subjects) || !subjects.length || !subject) {
         window.location.replace('./login.html');
-        throw new Error('LOGIN_REQUIRED');
       }
-    } catch (error) {
-      if (error.message !== 'LOGIN_REQUIRED') {
-        window.location.replace('./login.html');
-      }
-    }
+    } catch (e) { window.location.replace('./login.html'); }
   })();
-
-  // 회원용 화면에서 문제의 복사, 잘라내기, 붙여넣기와 우클릭을 막는다.
-  ['copy', 'cut', 'paste', 'contextmenu'].forEach(function(eventName) {
-    document.addEventListener(eventName, function(event) {
-      event.preventDefault();
-    }, true);
+  ['copy', 'cut', 'paste', 'contextmenu'].forEach(function(name) {
+    document.addEventListener(name, function(event) { event.preventDefault(); }, true);
   });
-
   document.addEventListener('keydown', function(event) {
     var key = String(event.key || '').toLowerCase();
-    if ((event.ctrlKey || event.metaKey) && ['c', 'x', 'v', 'a', 's', 'u'].indexOf(key) !== -1) {
-      event.preventDefault();
-    }
-    if (event.key === 'F12' || ((event.ctrlKey || event.metaKey) && event.shiftKey && ['i', 'j', 'c'].indexOf(key) !== -1)) {
-      event.preventDefault();
-    }
+    if ((event.ctrlKey || event.metaKey) && ['c','x','v','a','s','u'].indexOf(key) !== -1) event.preventDefault();
   }, true);
 </script>
 

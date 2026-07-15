@@ -124,9 +124,7 @@ var DOM = {};
 function applySelectedSubjectConfig() {
   try {
     subjectConfig = JSON.parse(localStorage.getItem('quiz_current_subject_v1') || 'null');
-  } catch (e) {
-    subjectConfig = null;
-  }
+  } catch (e) { subjectConfig = null; }
   if (!subjectConfig || !subjectConfig.CODE || !subjectConfig.SHEET) return false;
   CURRENT_SUBJECT = String(subjectConfig.CODE).trim().toUpperCase();
   CURRENT_SUBJECT_NAME = String(subjectConfig.NAME || CURRENT_SUBJECT).trim();
@@ -1078,17 +1076,9 @@ function updateSetSelector() {
 // BLOCK 0720: detectTotalQuestions (타임아웃 + fallback)
 // ========================================================================
 async function detectTotalQuestions() {
-    // Member GAS 로그인 응답에 포함된 subjects.QUESTION_COUNT를 우선 사용한다.
-    // 값이 없거나 올바르지 않을 때만 아래의 기존 문제 GAS 조회를 실행한다.
     try {
-        const selectedSubject = JSON.parse(
-            localStorage.getItem('quiz_current_subject_v1') || 'null'
-        );
-        const memberQuestionCount = Math.max(
-            0,
-            parseInt(selectedSubject && selectedSubject.QUESTION_COUNT, 10) || 0
-        );
-
+        const selectedSubject = JSON.parse(localStorage.getItem('quiz_current_subject_v1') || 'null');
+        const memberQuestionCount = Math.max(0, parseInt(selectedSubject && selectedSubject.QUESTION_COUNT, 10) || 0);
         if (memberQuestionCount > 0) {
             TOTAL_QUESTIONS = memberQuestionCount;
             localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS));
@@ -1100,7 +1090,6 @@ async function detectTotalQuestions() {
     } catch (e) {
         console.warn('⚠️ Invalid member subject QUESTION_COUNT; using existing total lookup.', e);
     }
-
     const cached = localStorage.getItem(TOTAL_CACHE_KEY);
     const cachedTime = localStorage.getItem(TOTAL_CACHE_KEY + '_time');
     const now = Date.now();
