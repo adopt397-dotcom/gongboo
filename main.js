@@ -144,8 +144,20 @@ function applySubjectConfig() {
     subjectConfig = null;
   }
   if (!subjectConfig || !subjectConfig.CODE || !subjectConfig.SHEET) {
-    window.location.replace('./login.html?v=8.0C9');
-    return false;
+    var isAdminPage = /(?:^|\/)admin\.html$/i.test(window.location.pathname);
+    if (isAdminPage) {
+      subjectConfig = {
+        CODE: 'SAT',
+        NAME: 'Digital SAT',
+        CATEGORY: 'TEST',
+        SHEET: 'sat',
+        SET_SIZE: 120,
+        QUESTION_COUNT: 1440
+      };
+    } else {
+      window.location.replace('./login.html?v=8.0C10');
+      return false;
+    }
   }
   currentSubject = String(subjectConfig.CODE).trim().toUpperCase();
   CURRENT_SUBJECT = currentSubject;
