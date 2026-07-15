@@ -1,12 +1,4 @@
 // ========================================================================
-// BLOCK 0000: System Configuration / maintenance map
-// 1000 Global State | 2000 Login/Auth handoff | 3000 Subject Management
-// 4000 Question Loader | 5000 Quiz Engine | 6000 Review System
-// 7000 Graphic Engine | 8000 Storage | 9000 Initialize / Export
-// Existing fine-grained block numbers are retained to avoid rewriting v8.0B.
-// ========================================================================
-
-// ========================================================================
 // BLOCK 0000: 시스템 메타 정보
 // ========================================================================
 // 버전: 8.0C (SAT Tutor context integration)
@@ -96,17 +88,12 @@ var LANG = {
 // ========================================================================
 // BLOCK 0120: 시스템 상수 (원본 B002)
 // ========================================================================
-var API_URL = "https://script.google.com/macros/s/AKfycbzVOpe2-tVbS8GsV2gZkh5BViY_Msa2yUgzaIrFOWU65U2JXS-MvbG0GrYyNtnSfsrC5Q/exec";
+var API_URL = "https://script.google.com/macros/s/AKfycbwLVA2OJ3H9RAKgzP3NvCWkDCGyRIAhxT6svLU6bvUT-oq1dxrFQSJQ31vb6z7Kyxnk/exec";
 var ORIGINAL_API_URL = API_URL;
-// BLOCK 1000: Multi Subject Global State
-var currentUser = null;
-var currentSubject = '';
-var subjectConfig = null;
-var availableSubjects = [];
 var DATA_SHEET = 'sat';
-var CURRENT_SUBJECT = '';
-var STORAGE_KEY = 'quiz_progress_main_v8_0C_sat';
-var TOTAL_CACHE_KEY = 'quiz_total_questions_v8_0C_sat';
+var CURRENT_SUBJECT = ''; // sat 시트 SUBJECT가 비어 있어 필터하지 않음
+var STORAGE_KEY = 'quiz_progress_main_v8_0B';
+var TOTAL_CACHE_KEY = 'quiz_total_questions_v8_0B_sat';
 var LANGUAGE_STORAGE_KEY = 'quiz_language_v7';
 var MODE_STORAGE_KEY = 'quiz_mode_v8_0B';
 var SUPPORTED_MODES = ['learn', 'study', 'exam'];
@@ -131,36 +118,6 @@ var currentStartNumber = 1;
 var autoSaveInterval = null;
 var chartInstances = {};
 var DOM = {};
-
-// BLOCK 3000: Subject Management
-function applySubjectConfig() {
-  try {
-    currentUser = JSON.parse(localStorage.getItem('quiz_current_user_v1') || 'null');
-    availableSubjects = JSON.parse(localStorage.getItem('quiz_available_subjects_v1') || '[]');
-    subjectConfig = JSON.parse(localStorage.getItem('quiz_current_subject_v1') || 'null');
-  } catch (e) {
-    currentUser = null;
-    availableSubjects = [];
-    subjectConfig = null;
-  }
-  if (!subjectConfig || !subjectConfig.CODE || !subjectConfig.SHEET) {
-    window.location.replace('./login.html');
-    return false;
-  }
-  currentSubject = String(subjectConfig.CODE).trim().toUpperCase();
-  CURRENT_SUBJECT = currentSubject;
-  DATA_SHEET = String(subjectConfig.SHEET).trim();
-  QUESTIONS_PER_SET = Math.max(1, parseInt(subjectConfig.SET_SIZE, 10) || 120);
-  TOTAL_QUESTIONS = Math.max(0, parseInt(subjectConfig.QUESTION_COUNT, 10) || 0);
-  var keyPart = currentSubject.replace(/[^A-Z0-9_-]/g, '_');
-  STORAGE_KEY = 'quiz_progress_main_v8_0C_' + keyPart;
-  TOTAL_CACHE_KEY = 'quiz_total_questions_v8_0C_' + keyPart;
-  window.currentUser = currentUser;
-  window.currentSubject = currentSubject;
-  window.subjectConfig = subjectConfig;
-  window.availableSubjects = availableSubjects;
-  return true;
-}
 
 // ========================================================================
 // BLOCK 0200: CDN 폴백 체계
@@ -698,8 +655,6 @@ function saveProgress() {
       timestamp: new Date().toISOString(),
       currentLanguage: currentLanguage,
       currentMode: currentMode,
-      currentSubject: currentSubject,
-      subjectConfig: subjectConfig,
       learnRevealed: learnRevealed,
       examFinished: examFinished,
       cdnLoaded: {
@@ -1096,7 +1051,29 @@ function updateSetSelector() {
 // BLOCK 0720: detectTotalQuestions (타임아웃 + fallback)
 // ========================================================================
 async function detectTotalQuestions() {
-    if (TOTAL_QUESTIONS > 0) return TOTAL_QUESTIONS;
+    // Member GAS 로그인 응답에 포함된 subjects.QUESTION_COUNT를 우선 사용한다.
+    // 값이 없거나 올바르지 않을 때만 아래의 기존 문제 GAS 조회를 실행한다.
+    try {
+        const selectedSubject = JSON.parse(
+            localStorage.getItem('quiz_current_subject_v1') || 'null'
+        );
+        const memberQuestionCount = Math.max(
+            0,
+            parseInt(selectedSubject && selectedSubject.QUESTION_COUNT, 10) || 0
+        );
+
+        if (memberQuestionCount > 0) {
+            TOTAL_QUESTIONS = memberQuestionCount;
+            localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS));
+            localStorage.setItem(TOTAL_CACHE_KEY + '_time', String(Date.now()));
+            console.log('✅ Using QUESTION_COUNT from member subjects:', TOTAL_QUESTIONS);
+            updateSplash(60, 'Preparing data...');
+            return TOTAL_QUESTIONS;
+        }
+    } catch (e) {
+        console.warn('⚠️ Invalid member subject QUESTION_COUNT; using existing total lookup.', e);
+    }
+
     const cached = localStorage.getItem(TOTAL_CACHE_KEY);
     const cachedTime = localStorage.getItem(TOTAL_CACHE_KEY + '_time');
     const now = Date.now();
@@ -1121,7 +1098,7 @@ async function detectTotalQuestions() {
         const totalParams = new URLSearchParams();
         totalParams.set('total', 'true');
         totalParams.set('_', String(Date.now()));
-        totalParams.set('sheet', DATA_SHEET);
+        if (CURRENT_SUBJECT) totalParams.set('subject', CURRENT_SUBJECT);
         const url = ORIGINAL_API_URL + '?' + totalParams.toString();
         console.log('📡 Requesting total (direct):', url);
         
@@ -1190,7 +1167,7 @@ async function load50Questions(uiStartNumber, retryCount = 0) {
         requestParams.set('start', String(uiStartNumber));
         requestParams.set('limit', String(QUESTIONS_PER_SET));
         requestParams.set('_', String(Date.now()));
-        requestParams.set('sheet', DATA_SHEET);
+        if (CURRENT_SUBJECT) requestParams.set('subject', CURRENT_SUBJECT);
         var url = ORIGINAL_API_URL + '?' + requestParams.toString();
         console.log('📡 Requesting questions (direct):', url);
         
@@ -4975,7 +4952,6 @@ async function startQuizWithNumber(uiStartNumber) {
 // BLOCK 1510: 시스템 초기화 (원본 B012 initialize)
 // ========================================================================
 function initialize() {
-  if (!applySubjectConfig()) return;
   console.log('🔧 initialize() started');
   
   initDOM();
@@ -5169,9 +5145,7 @@ window.getCurrentQuestionContext = function() {
     SOURCE_ID: q.sourceId || raw.SOURCE_ID || '',
     STATUS: q.status || raw.STATUS || '',
     currentIndex: currentIndex,
-      currentMode: currentMode,
-      currentSubject: currentSubject,
-      subjectConfig: subjectConfig,
+    currentMode: currentMode,
     currentLanguage: currentLanguage
   };
 };
@@ -5181,11 +5155,6 @@ window.SUPPORTED_LANGUAGES = SUPPORTED_LANGUAGES;
 window.DOM = DOM;
 window.LOADER = LOADER;
 window.RendererManager = RendererManager;
-window.currentUser = currentUser;
-window.currentSubject = currentSubject;
-window.subjectConfig = subjectConfig;
-window.availableSubjects = availableSubjects;
-window.applySubjectConfig = applySubjectConfig;
 
 // ★★★★★ 유틸리티 함수 전역 노출 ★★★★★
 window.escapeHtml = escapeHtml;
