@@ -162,6 +162,10 @@ function applySubjectConfig() {
   currentSubject = String(subjectConfig.CODE).trim().toUpperCase();
   CURRENT_SUBJECT = currentSubject;
   DATA_SHEET = String(subjectConfig.SHEET).trim();
+  var sheetAliases = {
+    REAL_ESTATE: 'realestate'
+  };
+  DATA_SHEET = sheetAliases[DATA_SHEET.toUpperCase()] || DATA_SHEET.toLowerCase();
   QUESTIONS_PER_SET = Math.max(1, parseInt(subjectConfig.SET_SIZE, 10) || 120);
   TOTAL_QUESTIONS = Math.max(0, parseInt(subjectConfig.QUESTION_COUNT, 10) || 0);
   var keyPart = currentSubject.replace(/[^A-Z0-9_-]/g, '_');
