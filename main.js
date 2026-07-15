@@ -88,10 +88,12 @@ var LANG = {
 // ========================================================================
 // BLOCK 0120: 시스템 상수 (원본 B002)
 // ========================================================================
-var API_URL = "https://script.google.com/macros/s/AKfycbwLVA2OJ3H9RAKgzP3NvCWkDCGyRIAhxT6svLU6bvUT-oq1dxrFQSJQ31vb6z7Kyxnk/exec";
+var API_URL = "https://script.google.com/macros/s/AKfycbzVOpe2-tVbS8GsV2gZkh5BViY_Msa2yUgzaIrFOWU65U2JXS-MvbG0GrYyNtnSfsrC5Q/exec";
 var ORIGINAL_API_URL = API_URL;
 var DATA_SHEET = 'sat';
 var CURRENT_SUBJECT = ''; // sat 시트 SUBJECT가 비어 있어 필터하지 않음
+var CURRENT_SUBJECT_NAME = 'Digital SAT';
+var subjectConfig = null;
 var STORAGE_KEY = 'quiz_progress_main_v8_0B';
 var TOTAL_CACHE_KEY = 'quiz_total_questions_v8_0B_sat';
 var LANGUAGE_STORAGE_KEY = 'quiz_language_v7';
@@ -118,6 +120,31 @@ var currentStartNumber = 1;
 var autoSaveInterval = null;
 var chartInstances = {};
 var DOM = {};
+
+function applySelectedSubjectConfig() {
+  try {
+    subjectConfig = JSON.parse(localStorage.getItem('quiz_current_subject_v1') || 'null');
+  } catch (e) {
+    subjectConfig = null;
+  }
+  if (!subjectConfig || !subjectConfig.CODE || !subjectConfig.SHEET) return false;
+  CURRENT_SUBJECT = String(subjectConfig.CODE).trim().toUpperCase();
+  CURRENT_SUBJECT_NAME = String(subjectConfig.NAME || CURRENT_SUBJECT).trim();
+  DATA_SHEET = String(subjectConfig.SHEET).trim().toLowerCase();
+  QUESTIONS_PER_SET = Math.max(1, parseInt(subjectConfig.SET_SIZE, 10) || 120);
+  TOTAL_QUESTIONS = Math.max(0, parseInt(subjectConfig.QUESTION_COUNT, 10) || 0);
+  var keyPart = CURRENT_SUBJECT.replace(/[^A-Z0-9_-]/g, '_');
+  STORAGE_KEY = 'quiz_progress_main_v8_0C_' + keyPart;
+  TOTAL_CACHE_KEY = 'quiz_total_questions_v8_0C_' + keyPart;
+  return true;
+}
+
+function updateSubjectHeader() {
+  var title = document.querySelector('.sat-title');
+  if (title) title.innerHTML = CURRENT_SUBJECT_NAME + ' <span class="set-separator">·</span> Set <span id="currentSetTitle">1</span>';
+  var subtitle = document.querySelector('.sat-sub');
+  if (subtitle) subtitle.textContent = String(subjectConfig && subjectConfig.CATEGORY || 'QUIZ');
+}
 
 // ========================================================================
 // BLOCK 0200: CDN 폴백 체계
@@ -1098,7 +1125,7 @@ async function detectTotalQuestions() {
         const totalParams = new URLSearchParams();
         totalParams.set('total', 'true');
         totalParams.set('_', String(Date.now()));
-        if (CURRENT_SUBJECT) totalParams.set('subject', CURRENT_SUBJECT);
+        totalParams.set('sheet', DATA_SHEET);
         const url = ORIGINAL_API_URL + '?' + totalParams.toString();
         console.log('📡 Requesting total (direct):', url);
         
@@ -1167,7 +1194,7 @@ async function load50Questions(uiStartNumber, retryCount = 0) {
         requestParams.set('start', String(uiStartNumber));
         requestParams.set('limit', String(QUESTIONS_PER_SET));
         requestParams.set('_', String(Date.now()));
-        if (CURRENT_SUBJECT) requestParams.set('subject', CURRENT_SUBJECT);
+        requestParams.set('sheet', DATA_SHEET);
         var url = ORIGINAL_API_URL + '?' + requestParams.toString();
         console.log('📡 Requesting questions (direct):', url);
         
@@ -4953,8 +4980,10 @@ async function startQuizWithNumber(uiStartNumber) {
 // ========================================================================
 function initialize() {
   console.log('🔧 initialize() started');
-  
+
+  applySelectedSubjectConfig();
   initDOM();
+  updateSubjectHeader();
   initLanguageSelector();
   initModeSelector();
   initTimer();

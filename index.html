@@ -1424,7 +1424,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!title) return;
 
     const start = Math.max(1, Number(startNumber) || 1);
-    title.textContent = String(Math.ceil(start / 120));
+    let setSize = 120;
+    try {
+      const subject = JSON.parse(localStorage.getItem('quiz_current_subject_v1') || 'null');
+      setSize = Math.max(1, Number(subject && subject.SET_SIZE) || 120);
+    } catch (e) {}
+    title.textContent = String(Math.ceil(start / setSize));
   }
 
   function bindSetTitleUI() {
@@ -1435,7 +1440,12 @@ document.addEventListener('DOMContentLoaded', () => {
     if (setSelector) {
       setSelector.addEventListener('change', function() {
         const setNumber = Math.max(1, Number(this.value) || 1);
-        updateSetTitleFromStart(((setNumber - 1) * 120) + 1);
+        let setSize = 120;
+        try {
+          const subject = JSON.parse(localStorage.getItem('quiz_current_subject_v1') || 'null');
+          setSize = Math.max(1, Number(subject && subject.SET_SIZE) || 120);
+        } catch (e) {}
+        updateSetTitleFromStart(((setNumber - 1) * setSize) + 1);
       });
     }
 

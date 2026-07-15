@@ -438,6 +438,13 @@
         // ==============================
         // 로그인
         // ==============================
+        document.getElementById('loginPassword').addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                document.getElementById('testLoginBtn').click();
+            }
+        });
+
         document.getElementById('testLoginBtn').addEventListener('click', async function() {
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
