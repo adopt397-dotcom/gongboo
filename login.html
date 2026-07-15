@@ -171,64 +171,6 @@
         .form-hidden {
             display: none;
         }
-        .subject-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 1000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            background: rgba(15, 23, 42, 0.58);
-        }
-        .subject-modal.open {
-            display: flex;
-        }
-        .subject-dialog {
-            width: min(420px, 100%);
-            padding: 30px;
-            border: 1px solid #E2E8F0;
-            border-radius: 18px;
-            background: #FFFFFF;
-            box-shadow: 0 22px 55px rgba(15, 23, 42, 0.25);
-        }
-        .subject-icon {
-            margin-bottom: 8px;
-            text-align: center;
-            font-size: 32px;
-        }
-        .subject-dialog h2 {
-            margin: 0;
-            color: #2D3748;
-            text-align: center;
-            font-size: 22px;
-        }
-        .subject-dialog p {
-            margin: 8px 0 20px;
-            color: #718096;
-            text-align: center;
-            font-size: 14px;
-        }
-        .subject-select {
-            width: 100%;
-            min-height: 52px;
-            padding: 0 44px 0 16px;
-            border: 1px solid #CBD5E0;
-            border-radius: 12px;
-            background: #F7FAFC;
-            color: #2D3748;
-            font: inherit;
-            cursor: pointer;
-        }
-        .subject-select:focus {
-            border-color: #F5A623;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.18);
-        }
-        .subject-confirm {
-            width: 100%;
-            margin-top: 18px;
-        }
         @media (max-width: 480px) {
             .container {
                 padding: 24px 18px;
@@ -237,6 +179,13 @@
                 font-size: 24px;
             }
         }
+        .subject-picker { display:none; margin-top:18px; }
+        .subject-picker h2 { margin:0 0 6px; font-size:22px; color:#24324a; }
+        .subject-picker p { margin:0 0 14px; color:#667085; }
+        .subject-list { display:grid; gap:10px; }
+        .subject-btn { width:100%; padding:15px; border:2px solid #e5e7eb; border-radius:12px; background:#fff; color:#24324a; font-weight:700; cursor:pointer; text-align:left; }
+        .subject-btn:hover, .subject-btn:focus { border-color:#f5a623; background:#fff8eb; outline:none; }
+        .subject-meta { display:block; margin-top:4px; color:#667085; font-size:12px; font-weight:400; }
     </style>
 </head>
 <body>
@@ -252,7 +201,7 @@
         </div>
 
         <!-- 로그인 -->
-        <div id="loginTab" class="tab-content">
+        <form id="loginTab" class="tab-content">
             <div class="form-group">
                 <label>E-mail</label>
                 <input id="loginEmail" type="email" placeholder="example@email.com" />
@@ -264,9 +213,14 @@
                     <span class="toggle-password" id="toggleLoginPassword">👁️</span>
                 </div>
             </div>
-            <button class="btn-primary" id="testLoginBtn">Login</button>
+            <button class="btn-primary" id="testLoginBtn" type="submit">Login</button>
             <div id="loginResult" class="result-box"></div>
-        </div>
+            <section id="subjectPicker" class="subject-picker" aria-labelledby="subjectPickerTitle">
+                <h2 id="subjectPickerTitle">Available Subjects</h2>
+                <p>Select a subject to start.</p>
+                <div id="subjectList" class="subject-list"></div>
+            </section>
+        </form>
 
         <!-- 회원가입 -->
         <div id="signupTab" class="tab-content form-hidden">
@@ -332,16 +286,6 @@
         </div>
     </div>
 
-    <div id="subjectModal" class="subject-modal" role="dialog" aria-modal="true" aria-labelledby="subjectModalTitle">
-        <div class="subject-dialog">
-            <div class="subject-icon">📚</div>
-            <h2 id="subjectModalTitle">Select a Subject</h2>
-            <p>Choose the subject you want to study.</p>
-            <select id="subjectSelect" class="subject-select" aria-label="Subject"></select>
-            <button id="subjectConfirmBtn" class="btn-primary subject-confirm" type="button">Continue</button>
-        </div>
-    </div>
-
     <script>
         const GAS_URL = 'https://script.google.com/macros/s/AKfycbzlkXn1EZuUto9MuuNxpSHl-SACd4Y-EMrz6ee7hUY6IjjHCw-prVx8JS0W4NpRDg37/exec';
 
@@ -349,40 +293,6 @@
             const el = document.getElementById(elementId);
             el.textContent = message;
             el.className = 'result-box' + (isSuccess ? ' success' : ' error');
-        }
-
-        function chooseSubject(subjects) {
-            if (subjects.length === 1) return Promise.resolve(subjects[0]);
-
-            return new Promise(function(resolve) {
-                const modal = document.getElementById('subjectModal');
-                const select = document.getElementById('subjectSelect');
-                const confirmButton = document.getElementById('subjectConfirmBtn');
-
-                select.innerHTML = '';
-                subjects.forEach(function(subject, index) {
-                    const option = document.createElement('option');
-                    option.value = String(index);
-                    option.textContent = subject.NAME || subject.CODE || ('Subject ' + (index + 1));
-                    select.appendChild(option);
-                });
-
-                function confirmSelection() {
-                    confirmButton.removeEventListener('click', confirmSelection);
-                    select.removeEventListener('keydown', handleKeydown);
-                    modal.classList.remove('open');
-                    resolve(subjects[Number(select.value) || 0]);
-                }
-
-                function handleKeydown(event) {
-                    if (event.key === 'Enter') confirmSelection();
-                }
-
-                confirmButton.addEventListener('click', confirmSelection);
-                select.addEventListener('keydown', handleKeydown);
-                modal.classList.add('open');
-                setTimeout(function() { select.focus(); }, 0);
-            });
         }
 
         function togglePasswordVisibility(inputId, toggleId) {
@@ -438,14 +348,8 @@
         // ==============================
         // 로그인
         // ==============================
-        document.getElementById('loginPassword').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                document.getElementById('testLoginBtn').click();
-            }
-        });
-
-        document.getElementById('testLoginBtn').addEventListener('click', async function() {
+        document.getElementById('loginTab').addEventListener('submit', async function(event) {
+            event.preventDefault();
             const email = document.getElementById('loginEmail').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
             if (!email || !password) {
@@ -465,14 +369,8 @@
                     const subjects = Array.isArray(data.subjects) ? data.subjects : [];
                     localStorage.setItem('quiz_current_user_v1', JSON.stringify(user));
                     localStorage.setItem('quiz_available_subjects_v1', JSON.stringify(subjects));
-                    if (!subjects.length) {
-                        showResult('loginResult', '❌ No active subjects are assigned to this account.', false);
-                        return;
-                    }
-                    const selected = await chooseSubject(subjects);
-                    localStorage.setItem('quiz_current_subject_v1', JSON.stringify(selected));
                     showResult('loginResult', '✅ Welcome, ' + (user.name || email) + '!', true);
-                    window.location.href = './index.html';
+                    renderSubjectPicker(subjects);
                 } else {
                     let msg = data.message;
                     if (data.status === 'pending') msg = '⏳ ' + msg;
@@ -484,6 +382,33 @@
                 showResult('loginResult', '❌ Server error: ' + err.message, false);
             }
         });
+
+        function renderSubjectPicker(subjects) {
+            const picker = document.getElementById('subjectPicker');
+            const list = document.getElementById('subjectList');
+            list.innerHTML = '';
+            if (!subjects.length) {
+                showResult('loginResult', '❌ No active subjects are assigned to this account.', false);
+                picker.style.display = 'none';
+                return;
+            }
+            subjects.forEach(subject => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'subject-btn';
+                button.textContent = subject.NAME || subject.CODE;
+                const meta = document.createElement('span');
+                meta.className = 'subject-meta';
+                meta.textContent = (subject.CATEGORY || 'QUIZ') + ' · ' + Number(subject.SET_SIZE || 120) + ' questions per set';
+                button.appendChild(meta);
+                button.addEventListener('click', () => {
+                    localStorage.setItem('quiz_current_subject_v1', JSON.stringify(subject));
+                    window.location.href = './index.html';
+                });
+                list.appendChild(button);
+            });
+            picker.style.display = 'block';
+        }
 
         // ==============================
         // 회원가입 (방법 5 적용)

@@ -1,4 +1,12 @@
 // ========================================================================
+// BLOCK 0000: System Configuration / maintenance map
+// 1000 Global State | 2000 Login/Auth handoff | 3000 Subject Management
+// 4000 Question Loader | 5000 Quiz Engine | 6000 Review System
+// 7000 Graphic Engine | 8000 Storage | 9000 Initialize / Export
+// Existing fine-grained block numbers are retained to avoid rewriting v8.0B.
+// ========================================================================
+
+// ========================================================================
 // BLOCK 0000: 시스템 메타 정보
 // ========================================================================
 // 버전: 8.0C (SAT Tutor context integration)
@@ -90,12 +98,15 @@ var LANG = {
 // ========================================================================
 var API_URL = "https://script.google.com/macros/s/AKfycby4s8OCvNEjw0_DlG0sXqdbDTuhQ4cIl1a3ghIvwsGvORpHaoQXJ6mzSB83P60wU_xc_A/exec";
 var ORIGINAL_API_URL = API_URL;
-var DATA_SHEET = 'sat';
-var CURRENT_SUBJECT = ''; // sat 시트 SUBJECT가 비어 있어 필터하지 않음
-var CURRENT_SUBJECT_NAME = 'Digital SAT';
+// BLOCK 1000: Multi Subject Global State
+var currentUser = null;
+var currentSubject = '';
 var subjectConfig = null;
-var STORAGE_KEY = 'quiz_progress_main_v8_0B';
-var TOTAL_CACHE_KEY = 'quiz_total_questions_v8_0B_sat';
+var availableSubjects = [];
+var DATA_SHEET = 'sat';
+var CURRENT_SUBJECT = '';
+var STORAGE_KEY = 'quiz_progress_main_v8_0C_sat';
+var TOTAL_CACHE_KEY = 'quiz_total_questions_v8_0C_sat';
 var LANGUAGE_STORAGE_KEY = 'quiz_language_v7';
 var MODE_STORAGE_KEY = 'quiz_mode_v8_0B';
 var SUPPORTED_MODES = ['learn', 'study', 'exam'];
@@ -121,26 +132,42 @@ var autoSaveInterval = null;
 var chartInstances = {};
 var DOM = {};
 
-function applySelectedSubjectConfig() {
-  try { subjectConfig = JSON.parse(localStorage.getItem('quiz_current_subject_v1') || 'null'); }
-  catch (e) { subjectConfig = null; }
-  if (!subjectConfig || !subjectConfig.CODE || !subjectConfig.SHEET) return false;
-  CURRENT_SUBJECT = String(subjectConfig.CODE).trim().toUpperCase();
-  CURRENT_SUBJECT_NAME = String(subjectConfig.NAME || CURRENT_SUBJECT).trim();
-  DATA_SHEET = String(subjectConfig.SHEET).trim().toLowerCase();
+// BLOCK 3000: Subject Management
+function applySubjectConfig() {
+  try {
+    currentUser = JSON.parse(localStorage.getItem('quiz_current_user_v1') || 'null');
+    availableSubjects = JSON.parse(localStorage.getItem('quiz_available_subjects_v1') || '[]');
+    subjectConfig = JSON.parse(localStorage.getItem('quiz_current_subject_v1') || 'null');
+  } catch (e) {
+    currentUser = null;
+    availableSubjects = [];
+    subjectConfig = null;
+  }
+  if (!subjectConfig || !subjectConfig.CODE || !subjectConfig.SHEET) {
+    window.location.replace('./login.html');
+    return false;
+  }
+  currentSubject = String(subjectConfig.CODE).trim().toUpperCase();
+  CURRENT_SUBJECT = currentSubject;
+  DATA_SHEET = String(subjectConfig.SHEET).trim();
   QUESTIONS_PER_SET = Math.max(1, parseInt(subjectConfig.SET_SIZE, 10) || 120);
   TOTAL_QUESTIONS = Math.max(0, parseInt(subjectConfig.QUESTION_COUNT, 10) || 0);
-  var keyPart = CURRENT_SUBJECT.replace(/[^A-Z0-9_-]/g, '_');
+  var keyPart = currentSubject.replace(/[^A-Z0-9_-]/g, '_');
   STORAGE_KEY = 'quiz_progress_main_v8_0C_' + keyPart;
   TOTAL_CACHE_KEY = 'quiz_total_questions_v8_0C_' + keyPart;
+  window.currentUser = currentUser;
+  window.currentSubject = currentSubject;
+  window.subjectConfig = subjectConfig;
+  window.availableSubjects = availableSubjects;
+  console.log('Using subject configuration:', { code: currentSubject, sheet: DATA_SHEET, setSize: QUESTIONS_PER_SET, questionCount: TOTAL_QUESTIONS });
   return true;
 }
 
-function updateSubjectHeader() {
+function updateSubjectTitle(setNumber) {
   var title = document.querySelector('.sat-title');
-  if (title) title.innerHTML = CURRENT_SUBJECT_NAME + ' <span class="set-separator">·</span> Set <span id="currentSetTitle">1</span>';
   var subtitle = document.querySelector('.sat-sub');
-  if (subtitle) subtitle.textContent = String(subjectConfig && subjectConfig.CATEGORY || 'QUIZ');
+  if (title) title.textContent = String(subjectConfig.NAME || currentSubject) + ' · Set ' + (setNumber || 1);
+  if (subtitle) subtitle.textContent = String(subjectConfig.CATEGORY || 'QUIZ');
 }
 
 // ========================================================================
@@ -679,6 +706,8 @@ function saveProgress() {
       timestamp: new Date().toISOString(),
       currentLanguage: currentLanguage,
       currentMode: currentMode,
+      currentSubject: currentSubject,
+      subjectConfig: subjectConfig,
       learnRevealed: learnRevealed,
       examFinished: examFinished,
       cdnLoaded: {
@@ -1075,17 +1104,7 @@ function updateSetSelector() {
 // BLOCK 0720: detectTotalQuestions (타임아웃 + fallback)
 // ========================================================================
 async function detectTotalQuestions() {
-    try {
-        const selectedSubject = JSON.parse(localStorage.getItem('quiz_current_subject_v1') || 'null');
-        const memberQuestionCount = Math.max(0, parseInt(selectedSubject && selectedSubject.QUESTION_COUNT, 10) || 0);
-        if (memberQuestionCount > 0) {
-            TOTAL_QUESTIONS = memberQuestionCount;
-            localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS));
-            localStorage.setItem(TOTAL_CACHE_KEY + '_time', String(Date.now()));
-            updateSplash(60, 'Preparing data...');
-            return TOTAL_QUESTIONS;
-        }
-    } catch (e) {}
+    if (TOTAL_QUESTIONS > 0) return TOTAL_QUESTIONS;
     const cached = localStorage.getItem(TOTAL_CACHE_KEY);
     const cachedTime = localStorage.getItem(TOTAL_CACHE_KEY + '_time');
     const now = Date.now();
@@ -1125,6 +1144,7 @@ async function detectTotalQuestions() {
         }
         
         const data = JSON.parse(text);
+        if (data && (data.status === 'error' || data.success === false)) throw new Error(data.message || 'Failed to load question total');
         const total = data.total || 0;
         
         if (total > 0) {
@@ -1148,11 +1168,7 @@ async function detectTotalQuestions() {
         }
     }
     
-    TOTAL_QUESTIONS = 1440;
-    localStorage.setItem(TOTAL_CACHE_KEY, String(TOTAL_QUESTIONS));
-    localStorage.setItem(TOTAL_CACHE_KEY + '_time', String(now));
-    updateSplash(60, 'Preparing data...');
-    return TOTAL_QUESTIONS;
+    throw new Error('Question count is unavailable for ' + currentSubject);
 }
 
 // ========================================================================
@@ -1194,9 +1210,7 @@ async function load50Questions(uiStartNumber, retryCount = 0) {
         }
         
         var data = JSON.parse(text);
-        if (data && typeof data === 'object' && String(data.status || '').toLowerCase() === 'error') {
-            throw new Error(data.message || 'Quiz GAS returned an error');
-        }
+        if (data && (data.status === 'error' || data.success === false)) throw new Error(data.message || 'Failed to load questions');
         console.log('📡 Response type:', typeof data);
         console.log('📡 Is array?', Array.isArray(data));
         
@@ -1215,19 +1229,6 @@ async function load50Questions(uiStartNumber, retryCount = 0) {
             } else if (Array.isArray(data.items)) {
                 questionsData = data.items;
                 console.log('✅ Found data.items array, length:', questionsData.length);
-            } else {
-                var keys = Object.keys(data);
-                if (keys.length > 0) {
-                    questionsData = keys.map(function(key) {
-                        var item = data[key];
-                        if (typeof item === 'object' && item !== null) {
-                            item._key = key;
-                            return item;
-                        }
-                        return { question: String(item), answer: '1', _key: key };
-                    });
-                    console.log('✅ Converted object to array, length:', questionsData.length);
-                }
             }
         }
         
@@ -4967,10 +4968,11 @@ async function startQuizWithNumber(uiStartNumber) {
 // BLOCK 1510: 시스템 초기화 (원본 B012 initialize)
 // ========================================================================
 function initialize() {
+  if (!applySubjectConfig()) return;
   console.log('🔧 initialize() started');
-  applySelectedSubjectConfig();
+  
   initDOM();
-  updateSubjectHeader();
+  updateSubjectTitle(1);
   initLanguageSelector();
   initModeSelector();
   initTimer();
@@ -5007,6 +5009,7 @@ function initialize() {
           if (!isNaN(setNum) && setNum >= 1) {
             var startNum = (setNum - 1) * QUESTIONS_PER_SET + 1;
             DOM.startNumberInput.value = startNum;
+            updateSubjectTitle(setNum);
             console.log('Set ' + setNum + ' selected, starting from question ' + startNum);
           }
         });
@@ -5161,7 +5164,9 @@ window.getCurrentQuestionContext = function() {
     SOURCE_ID: q.sourceId || raw.SOURCE_ID || '',
     STATUS: q.status || raw.STATUS || '',
     currentIndex: currentIndex,
-    currentMode: currentMode,
+      currentMode: currentMode,
+      currentSubject: currentSubject,
+      subjectConfig: subjectConfig,
     currentLanguage: currentLanguage
   };
 };
@@ -5171,6 +5176,11 @@ window.SUPPORTED_LANGUAGES = SUPPORTED_LANGUAGES;
 window.DOM = DOM;
 window.LOADER = LOADER;
 window.RendererManager = RendererManager;
+window.currentUser = currentUser;
+window.currentSubject = currentSubject;
+window.subjectConfig = subjectConfig;
+window.availableSubjects = availableSubjects;
+window.applySubjectConfig = applySubjectConfig;
 
 // ★★★★★ 유틸리티 함수 전역 노출 ★★★★★
 window.escapeHtml = escapeHtml;
