@@ -96,7 +96,7 @@ var LANG = {
 // ========================================================================
 // BLOCK 0120: 시스템 상수 (원본 B002)
 // ========================================================================
-var API_URL = "https://script.google.com/macros/s/AKfycbz8rVDhLAgQYTlP-wVWVOdGAc7wTUvT_uVAXTNgBwcFz3FR-urNvoaswO3BVCc4BvsC/exec";
+var API_URL = "https://script.google.com/macros/s/AKfycbx61bfbtlyGq8V9S_XwlAs_fj8VT_aIHQNga9nJcHc6DvORDNbcIDb_AkVVKRGfJpe1_w/exec";
 var ORIGINAL_API_URL = API_URL;
 // BLOCK 1000: Multi Subject Global State
 var currentUser = null;
@@ -155,7 +155,7 @@ function applySubjectConfig() {
         QUESTION_COUNT: 1440
       };
     } else {
-      window.location.replace('./login.html?v=8.0C12-TIMER12');
+      window.location.replace('./login.html?v=8.0C12-GONGBOO1');
       return false;
     }
   }
